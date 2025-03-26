@@ -3,6 +3,7 @@ import heapq
 from collections import deque
 import math
 
+# read input file
 def parse_input_file(filename):
     nodes = {}
     edges = {}
@@ -45,6 +46,8 @@ def parse_input_file(filename):
                 destinations = set(line.replace(";", "").split())
     
     return nodes, edges, origin, destinations
+
+# placeholder for the methods
 
 def bfs(edges, origin, destinations):
     queue = deque([(origin, [origin], 0)])
@@ -102,6 +105,14 @@ def a_star(nodes, edges, origin, destinations):
     
     return None, None
 
+
+
+# end of methods section
+
+
+
+
+# main function
 def main():
     if len(sys.argv) != 3:
         print("Usage: python search.py <filename> <method>")
