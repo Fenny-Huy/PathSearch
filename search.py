@@ -3,6 +3,10 @@ import heapq
 from collections import deque
 import math
 
+import networkx as nx
+import matplotlib.pyplot as plt
+import time
+
 # read input file
 def parse_input_file(filename):
     nodes = {}
@@ -50,36 +54,91 @@ def parse_input_file(filename):
 # placeholder for the methods
 
 def bfs(edges, origin, destinations):
-    queue = deque([(origin, [origin], 0)])
+    queue = deque([(origin, [origin], 0)])  # (current_node, path, total_cost)
     visited = set()
-    
+
     while queue:
         node, path, cost = queue.popleft()
+
         if node in destinations:
             return path, cost
-        
+
         if node not in visited:
             visited.add(node)
             for neighbor, edge_cost in edges.get(node, []):
-                queue.append((neighbor, path + [neighbor], cost + edge_cost))
-    
+                if neighbor not in visited:
+                    queue.append((neighbor, path + [neighbor], cost + edge_cost))
+
     return None, None
 
-def dfs(edges, origin, destinations):
-    stack = [(origin, [origin], 0)]
+
+def bfs_with_visualization(nodes, edges, origin, destinations):
+    # Create a graph using networkx
+    G = nx.Graph()
+    for node, coords in nodes.items():
+        G.add_node(node, pos=coords)
+    for node, neighbors in edges.items():
+        for neighbor, cost in neighbors:
+            G.add_edge(node, neighbor, weight=cost)
+
+    # Get positions for nodes
+    pos = nx.get_node_attributes(G, 'pos')
+
+    # Initialize visualization
+    plt.ion()  # Turn on interactive mode
+    fig, ax = plt.subplots(figsize=(8, 6))
+    nx.draw(G, pos, with_labels=True, node_color='lightblue', ax=ax)
+    plt.title("BFS Visualization")
+    plt.show()
+
+    # BFS algorithm with visualization
+    queue = deque([(origin, [origin], 0)])
     visited = set()
-    
-    while stack:
-        node, path, cost = stack.pop()
+
+    while queue:
+        # Draw the current state of the graph
+        current_nodes = [node for node, _, _ in queue]
+        nx.draw(G, pos, with_labels=True, node_color='lightblue', ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=current_nodes, node_color='yellow', ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=list(visited), node_color='green', ax=ax)
+        plt.pause(1)  # Pause to visualize the current state
+
+        node, path, cost = queue.popleft()
         if node in destinations:
+            print(f"Destination {node} reached!")
+            nx.draw_networkx_nodes(G, pos, nodelist=path, node_color='red', ax=ax)
+            plt.pause(1)
             return path, cost
-        
+
         if node not in visited:
             visited.add(node)
             for neighbor, edge_cost in edges.get(node, []):
-                stack.append((neighbor, path + [neighbor], cost + edge_cost))
-    
+                if neighbor not in visited:
+                    queue.append((neighbor, path + [neighbor], cost + edge_cost))
+
+    print("No path found.")
     return None, None
+
+
+
+def dfs(edges, origin, destinations):
+    stack = [(origin, [origin], 0)]  # (current_node, path, total_cost)
+    visited = set()
+
+    while stack:
+        node, path, cost = stack.pop()
+
+        if node in destinations:
+            return path, cost
+
+        if node not in visited:
+            visited.add(node)
+            for neighbor, edge_cost in edges.get(node, []):
+                if neighbor not in visited:
+                    stack.append((neighbor, path + [neighbor], cost + edge_cost))
+
+    return None, None
+
 
 def heuristic(node, goal, nodes):
     x1, y1 = nodes[node]
@@ -106,6 +165,37 @@ def a_star(nodes, edges, origin, destinations):
     return None, None
 
 
+def greedy_best_first_search(nodes, edges, origin, destinations):
+    # Priority queue: (heuristic_cost, current_node, path)
+    pq = [(heuristic(origin, min(destinations, key=lambda d: heuristic(origin, d, nodes)), nodes), origin, [origin], 0)]
+    print(f"goal: {min(destinations, key=lambda d: heuristic(origin, d, nodes))}")
+    print(f"Initial queue: {pq}")
+    visited = set()
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))  # Closest destination based on heuristic
+    print(f"Goal: {goal}")
+
+    while pq:
+        # Get the node with the smallest heuristic value
+        _, node, path, cost = heapq.heappop(pq)
+        print(f"{_}, {node}, {path}, {cost}")
+
+        # If the node is a destination, return the path and total cost
+        if node in destinations:
+            return path, cost
+
+        if node not in visited:
+            visited.add(node)
+
+            # Add neighbors to the priority queue
+            for neighbor, edge_cost in edges.get(node, []):
+                if neighbor not in visited:
+                    h_cost = heuristic(neighbor, goal, nodes)
+                    heapq.heappush(pq, (h_cost, neighbor, path + [neighbor], cost + edge_cost))
+
+    return None, None
+
+
+
 
 # end of methods section
 
@@ -128,6 +218,10 @@ def main():
         path, cost = dfs(edges, origin, destinations)
     elif method == 'a*':
         path, cost = a_star(nodes, edges, origin, destinations)
+    elif method == 'gbfs':
+        path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
+    elif method == 'bfs_v':
+        path, cost = bfs_with_visualization(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method: {method}")
         return
@@ -136,6 +230,7 @@ def main():
         print(f"{filename} {method}")
         print(f"{path[-1]} {len(path)}")
         print(" -> ".join(path))
+        print(f"Cost: {cost}")
     else:
         print(f"No path found using {method}")
 
