@@ -145,6 +145,22 @@ def heuristic(node, goal, nodes):
     x2, y2 = nodes[goal]
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
+
+def heuristic_a_star(node, goal, nodes):
+    x1, y1 = nodes[node]
+    x2, y2 = nodes[goal]
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def heuristic_gbfs(node, goal, nodes):
+    x1, y1 = nodes[node]
+    x2, y2 = nodes[goal]
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def heuristic_informed_custom(node, goal, nodes):
+    x1, y1 = nodes[node]
+    x2, y2 = nodes[goal]
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
 def a_star(nodes, edges, origin, destinations):
     pq = [(0, origin, [origin], 0)]
     visited = set()
@@ -177,7 +193,7 @@ def greedy_best_first_search(nodes, edges, origin, destinations):
     while pq:
         # Get the node with the smallest heuristic value
         _, node, path, cost = heapq.heappop(pq)
-        print(f"{_}, {node}, {path}, {cost}")
+        print(f"{_**2}, {node}, {path}, {cost}")
 
         # If the node is a destination, return the path and total cost
         if node in destinations:
