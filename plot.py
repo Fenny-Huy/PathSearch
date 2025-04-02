@@ -61,9 +61,11 @@ def plot_graph(file_path):
     plt.figure(figsize=(8, 6))
     nx.draw(G, pos, with_labels=True, node_color="lightblue", edge_color="gray", node_size=800, font_size=12, arrows=True, connectionstyle="arc3,rad=0.1", edgecolors="black")
 
-    # Draw edge labels (weights)
+    # Draw edge labels (weights) with improved visibility
     edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10)
+    nx.draw_networkx_edge_labels(
+        G, pos, edge_labels=edge_labels, font_size=10, label_pos=0.3, bbox=dict(facecolor='white', edgecolor='none', alpha=0.7)
+    )
 
     # Highlight origin and destination nodes
     nx.draw_networkx_nodes(G, pos, nodelist=[origin], node_color="red", node_size=900, label="Origin")

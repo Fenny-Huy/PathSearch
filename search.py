@@ -227,6 +227,7 @@ def main():
         return
     
     if path:
+        print(f"{path}")
         print(f"{filename} {method}")
         print(f"{path[-1]} {len(path)}")
         print(" -> ".join(path))
