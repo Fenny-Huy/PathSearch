@@ -74,16 +74,131 @@ def a_star_search(nodes, edges, origin, destinations):
     
     return None, len(visited), []
 
+
+def a_star_search_cost(nodes, edges, origin, destinations):
+    open_set = []
+    heapq.heappush(open_set, (0, origin, 0, [origin]))  # (f, current, g, path)
+    visited = set()
+    
+    while open_set:
+        f, current, g, path = heapq.heappop(open_set)
+        print(f"current node: {current}, f: {f}, g: {g}, path: {path}")
+        
+        if current in visited:
+            continue
+        visited.add(current)
+        
+        if current in destinations:
+            return current, len(visited), path, g  # Return the total cost (g) along with the path
+        
+        for neighbor, cost in edges.get(current, []):
+            if neighbor not in visited:
+                g_new = g + cost
+                h = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+                f_new = g_new + h
+                heapq.heappush(open_set, (f_new, neighbor, g_new, path + [neighbor]))
+    
+    return None, len(visited), [], 0  # Return 0 cost if no path is found
+
+
 def gbfs_search(nodes, edges, origin, destinations):
     open_set = []
     h = min(heuristic(origin, goal, nodes) for goal in destinations)
-    print(f"min heuristic between destinations: {h**2}")
+    print(f"min heuristic between destinations: {round(h**2)}")
     heapq.heappush(open_set, (h, origin, [origin]))
     visited = set()
     
     while open_set:
         h, current, path = heapq.heappop(open_set)
-        print(f"current node: {current}, heuristic2: {h**2}, path: {path}")
+        print(f"current node: {current}, heuristic2: {round(h**2)}, path: {path}")
+        
+        if current in visited:
+            continue
+        visited.add(current)
+        
+        if current in destinations:
+            return current, len(visited), path
+        
+        for neighbor, _ in edges.get(current, []):
+            if neighbor not in visited:
+                for goal in destinations:
+                    h_test = heuristic(neighbor, goal, nodes)
+                    print(f"neighbor: {neighbor}, goal: {goal}, heuristic2: {round(h_test**2)}, something: {_}")
+                h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+                heapq.heappush(open_set, (h_new, neighbor, path + [neighbor]))
+    
+    return None, len(visited), []
+
+def gbfs_search_cost(nodes, edges, origin, destinations):
+    open_set = []
+    h = min(heuristic(origin, goal, nodes) for goal in destinations)
+    print(f"min heuristic between destinations: {round(h**2)}")
+    heapq.heappush(open_set, (h, origin, 0, [origin]))  # (heuristic, current_node, total_cost, path)
+    visited = set()
+    
+    while open_set:
+        h, current, cost, path = heapq.heappop(open_set)
+        print(f"current node: {current}, heuristic2: {round(h**2)}, cost: {cost}, path: {path}")
+        
+        if current in visited:
+            continue
+        visited.add(current)
+        
+        if current in destinations:
+            return current, len(visited), path, cost  # Return the total cost along with the path
+        
+        for neighbor, edge_cost in edges.get(current, []):
+            if neighbor not in visited:
+                for goal in destinations:
+                    h_test = heuristic(neighbor, goal, nodes)
+                    print(f"neighbor: {neighbor}, goal: {goal}, heuristic2: {round(h_test**2)}, edge cost: {edge_cost}")
+                h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+                heapq.heappush(open_set, (h_new, neighbor, cost + edge_cost, path + [neighbor]))
+        
+
+        print(f"open_set: {open_set}")
+    
+    return None, len(visited), [], 0  # Return 0 cost if no path is found
+
+
+def hsm_search(nodes, edges, origin, destinations):
+    open_set = []
+    h = min(heuristic(origin, goal, nodes) for goal in destinations)
+    heapq.heappush(open_set, (h, origin, 0, [origin]))  # (f = moves + h, node, moves, path)
+    visited = set()
+
+    while open_set:
+        f, current, moves, path = heapq.heappop(open_set)
+        
+        if current in visited:
+            continue
+        visited.add(current)
+
+        if current in destinations:
+            return current, len(visited), path
+        
+        for neighbor, _ in edges.get(current, []):
+            if neighbor not in visited:
+                h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+                f_new = (moves + 1) + h_new
+                heapq.heappush(open_set, (f_new, neighbor, moves + 1, path + [neighbor]))
+    
+    return None, len(visited), []
+
+def hms_search(nodes, edges, origin, destinations):
+    """
+    Custom search: Heuristic Moves Search (HMS)
+    This method finds the path with the fewest moves by treating every move as a cost of 1,
+    and uses a heuristic to guide the search towards the nearest destination.
+    Evaluation function: f = (number of moves so far) + h, where h is the heuristic estimate.
+    """
+    open_set = []
+    initial_h = min(heuristic(origin, goal, nodes) for goal in destinations)
+    heapq.heappush(open_set, (initial_h, origin, 0, [origin]))  # (f, node, moves, path)
+    visited = set()
+    
+    while open_set:
+        f, current, moves, path = heapq.heappop(open_set)
         
         if current in visited:
             continue
@@ -95,9 +210,12 @@ def gbfs_search(nodes, edges, origin, destinations):
         for neighbor, _ in edges.get(current, []):
             if neighbor not in visited:
                 h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
-                heapq.heappush(open_set, (h_new, neighbor, path + [neighbor]))
+                f_new = (moves + 1) + h_new
+                heapq.heappush(open_set, (f_new, neighbor, moves + 1, path + [neighbor]))
     
     return None, len(visited), []
+
+
 
 def main():
     if len(sys.argv) != 3:
@@ -113,6 +231,14 @@ def main():
         goal, num_nodes, path = a_star_search(nodes, edges, origin, destinations)
     elif method == "gbfs":
         goal, num_nodes, path = gbfs_search(nodes, edges, origin, destinations)
+    elif method == "gbfs_cost":
+        goal, num_nodes, path, cost = gbfs_search_cost(nodes, edges, origin, destinations)
+    elif method == "a*_cost":
+        goal, num_nodes, path, cost = a_star_search_cost(nodes, edges, origin, destinations)
+    elif method == "hsm":
+        goal, num_nodes, path = hsm_search(nodes, edges, origin, destinations)
+    elif method == "hms":
+        goal, num_nodes, path = hms_search(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method '{method}'. Use 'a*' or 'gbfs'.")
         return
@@ -121,6 +247,7 @@ def main():
     if goal:
         print(f"{goal} {num_nodes}")
         print(" ".join(path))
+        print(f"Total cost: {cost}") if method == "gbfs_cost" or method == "a*_cost" else None
     else:
         print("No path found.")
 
