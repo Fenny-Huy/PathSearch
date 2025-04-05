@@ -210,7 +210,37 @@ def greedy_best_first_search(nodes, edges, origin, destinations):
 
     return None, None
 
+def bidirectional_a_star(nodes, edges, origin, destinations):
+    goal = min(destinations, key=lambda d: heuristic_informed_custom(origin, d, nodes))
+    forward_pq = [(0, origin, [origin], 0)]  # (f_score, current_node, path, total_cost)
+    backward_pq = [(0, goal, [goal], 0)]    # (f_score, current_node, path, total_cost)
+    forward_visited = {}
+    backward_visited = {}
 
+    while forward_pq and backward_pq:
+        # Forward search
+        _, node, path, cost = heapq.heappop(forward_pq)
+        if node in backward_visited:
+            return path + backward_visited[node][::-1][1:], cost + backward_visited[node][1]
+        if node not in forward_visited:
+            forward_visited[node] = (path, cost)
+            for neighbor, edge_cost in edges.get(node, []):
+                new_cost = cost + edge_cost
+                f_score = new_cost + heuristic_informed_custom(neighbor, goal, nodes)
+                heapq.heappush(forward_pq, (f_score, neighbor, path + [neighbor], new_cost))
+
+        # Backward search
+        _, node, path, cost = heapq.heappop(backward_pq)
+        if node in forward_visited:
+            return forward_visited[node][0] + path[::-1][1:], forward_visited[node][1] + cost
+        if node not in backward_visited:
+            backward_visited[node] = (path, cost)
+            for neighbor, edge_cost in edges.get(node, []):
+                new_cost = cost + edge_cost
+                f_score = new_cost + heuristic_informed_custom(neighbor, origin, nodes)
+                heapq.heappush(backward_pq, (f_score, neighbor, path + [neighbor], new_cost))
+
+    return None, None
 
 
 # end of methods section
@@ -238,6 +268,8 @@ def main():
         path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
     elif method == 'bfs_v':
         path, cost = bfs_with_visualization(nodes, edges, origin, destinations)
+    elif method == 'bidirectional_a*':
+        path, cost = bidirectional_a_star(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method: {method}")
         return
