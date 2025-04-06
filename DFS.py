@@ -1,14 +1,7 @@
 import sys
 
 def parse_file(filename):
-    """
-    Parses the input file and returns a tuple:
-    (graph, origin, destinations)
     
-    - graph: a dictionary where keys are node IDs and values are lists of neighboring node IDs.
-    - origin: the starting node ID.
-    - destinations: a set of destination node IDs.
-    """
     graph = {}
     origin = None
     destinations = set()
