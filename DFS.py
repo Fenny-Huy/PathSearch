@@ -1,7 +1,6 @@
 import sys
 
 def parse_file(filename):
-    
     graph = {}
     origin = None
     destinations = set()
