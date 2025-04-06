@@ -169,6 +169,7 @@ def hsm_search(nodes, edges, origin, destinations):
 
     while open_set:
         f, current, moves, path = heapq.heappop(open_set)
+        print(f"current node: {current}, f: {f}, moves: {moves}, path: {path}")
         
         if current in visited:
             continue
@@ -179,9 +180,16 @@ def hsm_search(nodes, edges, origin, destinations):
         
         for neighbor, _ in edges.get(current, []):
             if neighbor not in visited:
+                print(f"before add, open_set: {open_set}")
+                for goal in destinations:
+                    h_test = heuristic(neighbor, goal, nodes)
+                    print(f"neighbor: {neighbor}, goal: {goal}, heuristic2: {round(h_test**2)}, something: {_}")
                 h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
                 f_new = (moves + 1) + h_new
+                print(f"f_new: {f_new}, moves: {moves + 1}, h_new: {h_new}")
                 heapq.heappush(open_set, (f_new, neighbor, moves + 1, path + [neighbor]))
+                print(f"after add, open_set: {open_set}")
+     
     
     return None, len(visited), []
 
