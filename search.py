@@ -90,6 +90,24 @@ def dfs(edges, origin, destinations):
 
     return None, None
 
+def ucs(edges, origin, destinations): # Uniform cost search
+    pq = [(0, origin, [origin])]  # (cumulative_cost, current_node, path)
+    visited = set()
+
+    while pq:
+        cost, node, path = heapq.heappop(pq)
+
+        if node in destinations:
+            return path, cost
+
+        if node not in visited:
+            visited.add(node)
+            for neighbor, edge_cost in edges.get(node, []):
+                if neighbor not in visited:
+                    heapq.heappush(pq, (cost + edge_cost, neighbor, path + [neighbor]))
+
+    return None, None
+
 #informed methods
 
 def heuristic(node, goal, nodes):
@@ -186,6 +204,8 @@ def bfs_with_visualization(nodes, edges, origin, destinations):
             animate_graph(G, pos, edge_labels, origin, destinations,
                               visited, [n for n, _, _ in queue], used_edges,
                               title="BFS - Final Node Reached", ax=ax)
+            final_path = path
+            final_cost = cost
             break
 
         for neighbor, edge_cost in edges.get(node, []):
@@ -197,27 +217,12 @@ def bfs_with_visualization(nodes, edges, origin, destinations):
                 queue.append((neighbor, path + [neighbor], cost + edge_cost))
 
     if node in destinations:
-        final_path = path
-        ax.clear()
-        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
-        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
-        nx.draw(G, pos, with_labels=True, node_color='lightgray',
-                edge_color=edge_colors, edgecolors="black",
-                node_size=800, font_size=12, ax=ax,
-                arrows=True, connectionstyle="arc3,rad=0.1")
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
-                                     label_pos=0.4, rotate=False,
-                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
-
-        plt.title("BFS - Final Path")
-        plt.pause(2)
+        animate_final_path(G, pos, edge_labels, final_path, ax, "BFS")
 
     plt.ioff()
     plt.show()
 
-    return (path, cost) if node in destinations else (None, None)
+    return (final_path, final_cost) if node in destinations else (None, None)
 
 def dfs_with_visualization(nodes, edges, origin, destinations):
     visited = set()
@@ -249,6 +254,8 @@ def dfs_with_visualization(nodes, edges, origin, destinations):
             animate_graph(G, pos, edge_labels, origin, destinations,
                               visited, [n for n, _, _ in stack], used_edges,
                               title="DFS - Final Node Reached", ax=ax)
+            final_path = path
+            final_cost = cost
             break
 
         for neighbor, edge_cost in edges.get(node, []):
@@ -260,26 +267,61 @@ def dfs_with_visualization(nodes, edges, origin, destinations):
                 stack.append((neighbor, path + [neighbor], cost + edge_cost))
 
     if node in destinations:
-        final_path = path
-        ax.clear()
-        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
-        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
-        nx.draw(G, pos, with_labels=True, node_color='lightgray',
-                edge_color=edge_colors, edgecolors="black",
-                node_size=800, font_size=12, ax=ax,
-                arrows=True, connectionstyle="arc3,rad=0.1")
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
-                                     label_pos=0.4, rotate=False,
-                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
-
-        plt.title("DFS - Final Path")
-        plt.pause(2)
+        animate_final_path(G, pos, edge_labels, final_path, ax, "DFS")
 
     plt.ioff()
     plt.show()
-    return (path, cost) if node in destinations else (None, None)
+    
+    return (final_path, final_cost) if node in destinations else (None, None)
+
+def ucs_with_visualization(nodes, edges, origin, destinations):
+    visited = set()
+    pq = [(0, origin, [origin])]
+    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
+
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in edge_list:
+        G.add_edge(u, v, weight=cost)
+
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+    used_edges = []
+
+    while pq:
+        cost, node, path = heapq.heappop(pq)
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        if node in destinations:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                          visited, [n for _, n, _ in pq], used_edges,
+                          title="UCS - Final Node Reached", ax=ax)
+            final_path = path
+            final_cost = cost
+            break
+
+        for neighbor, edge_cost in edges.get(node, []):
+            used_edges.append((node, neighbor))
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                          visited, [n for _, n, _ in pq], used_edges,
+                          title=f"UCS - Checking {node} → {neighbor}", ax=ax)
+            if neighbor not in visited:
+                heapq.heappush(pq, (cost + edge_cost, neighbor, path + [neighbor]))
+
+    if node in destinations:
+        animate_final_path(G, pos, edge_labels, final_path, ax, "UCS")
+
+    plt.ioff()
+    plt.show()
+    return (final_path, final_cost) if node in destinations else (None, None)
 
 def greedy_best_first_search_with_visualization(nodes, edges, origin, destinations):
     visited = set()
@@ -312,6 +354,8 @@ def greedy_best_first_search_with_visualization(nodes, edges, origin, destinatio
             animate_graph(G, pos, edge_labels, origin, destinations,
                               visited, [n for _, n, _, _ in pq], used_edges,
                               title="GBFS - Final Node Reached", ax=ax)
+            final_path = path
+            final_cost = cost
             break
 
         for neighbor, edge_cost in edges.get(node, []):
@@ -324,26 +368,12 @@ def greedy_best_first_search_with_visualization(nodes, edges, origin, destinatio
                 heapq.heappush(pq, (h_cost, neighbor, path + [neighbor], cost + edge_cost))
 
     if node in destinations:
-        final_path = path
-        ax.clear()
-        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
-        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
-        nx.draw(G, pos, with_labels=True, node_color='lightgray',
-                edge_color=edge_colors, edgecolors="black",
-                node_size=800, font_size=12, ax=ax,
-                arrows=True, connectionstyle="arc3,rad=0.1")
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
-                                     label_pos=0.4, rotate=False,
-                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
-
-        plt.title("GBFS - Final Path")
-        plt.pause(2)
+        animate_final_path(G, pos, edge_labels, final_path, ax, "GBFS")
 
     plt.ioff()
     plt.show()
-    return (path, cost) if node in destinations else (None, None)
+
+    return (final_path, final_cost) if node in destinations else (None, None)
 
 def a_star_with_visualization(nodes, edges, origin, destinations):
     pq = [(0, 0, origin, [origin])]
@@ -377,7 +407,9 @@ def a_star_with_visualization(nodes, edges, origin, destinations):
         if node in destinations:
             animate_graph(G, pos, edge_labels, origin, destinations,
                               visited, [n for _, _, n, _ in pq], used_edges,
-                              title="A* - Final Evaluation", ax=ax)
+                              title="A* - Found Path", ax=ax)
+            final_path = path
+            final_cost = cost
             break  # the final path was found and displayed, breaking while loop to highlight it and end alg
 
         for neighbor, edge_cost in edges.get(node, []):
@@ -393,29 +425,13 @@ def a_star_with_visualization(nodes, edges, origin, destinations):
                 f_score = new_cost + heuristic(neighbor, goal, nodes)
                 heapq.heappush(pq, (f_score, new_cost, neighbor, path + [neighbor]))
 
-    # Final path display
     if node in destinations:
-        final_path = path
-        ax.clear()
-        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
-        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
-        nx.draw(G, pos, with_labels=True, node_color='lightgray',
-                edge_color=edge_colors, edgecolors="black",
-                node_size=800, font_size=12, ax=ax,
-                arrows=True, connectionstyle="arc3,rad=0.1")
-        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
-                                     label_pos=0.4, rotate=False,
-                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
-
-        plt.title("A* - Final Path")
-        plt.pause(2)
+        animate_final_path(G, pos, edge_labels, final_path, ax, "A*")
 
     plt.ioff()
     plt.show()
-
-    return (final_path, cost) if node in destinations else (None, None)
+    
+    return (final_path, final_cost) if node in destinations else (None, None)
 
 # end of visualized methods section
 
@@ -425,12 +441,12 @@ def animate_graph(G, pos, edge_labels, origin, destinations,
                       visited, frontier, active_edges, title, ax):
     ax.clear()
 
-    # Draw base
+    # Draw base graph
     nx.draw(G, pos, with_labels=True, node_color='lightgray', node_size=800,
             edge_color='gray', font_size=12, ax=ax,
             arrows=True, connectionstyle="arc3,rad=0.1")
 
-    # Draw active evaluated edges
+    # Draw actively evaluated edges
     nx.draw_networkx_edges(G, pos, edgelist=active_edges, edge_color="green", width=2.5, ax=ax,
                            connectionstyle="arc3,rad=0.1")
 
@@ -439,14 +455,39 @@ def animate_graph(G, pos, edge_labels, origin, destinations,
                                  label_pos=0.4, rotate=False,
                                  bbox=dict(facecolor='white', edgecolor='none', alpha=0.8), ax=ax)
 
-    # Nodes
-    nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+    # Highlight nodes in pathfinding
     nx.draw_networkx_nodes(G, pos, nodelist=frontier, node_color="yellow", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
     nx.draw_networkx_nodes(G, pos, nodelist=[origin], node_color="red", node_size=800, ax=ax)
     nx.draw_networkx_nodes(G, pos, nodelist=destinations, node_color="lime", node_size=800, ax=ax)
 
     plt.title(title)
     plt.pause(0.5)
+
+def animate_final_path(G, pos, edge_labels, path, ax, method):
+    ax.clear()
+
+    path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+    edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+
+    # Draw base graph
+    nx.draw(G, pos, with_labels=True, node_color='lightgray',
+            edge_color=edge_colors, edgecolors="black",
+            node_size=800, font_size=12, ax=ax,
+            arrows=True, connectionstyle="arc3,rad=0.1")
+
+    # Draw edge labels
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                 label_pos=0.4, rotate=False,
+                                 bbox=dict(facecolor='white', edgecolor='none', alpha=0.8), ax=ax)
+
+    # Highlight nodes in path
+    nx.draw_networkx_nodes(G, pos, nodelist=path, node_color="cyan", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=[path[0]], node_color="red", node_size=800, ax=ax)  # origin
+    nx.draw_networkx_nodes(G, pos, nodelist=[path[-1]], node_color="lime", node_size=800, ax=ax)  # destination
+
+    plt.title(f"{method} - Final Path")
+    plt.pause(2)
 
 # end of visualization section
 
@@ -468,6 +509,10 @@ def main():
         path, cost = dfs(edges, origin, destinations)
     elif method == 'dfs_v':
         path, cost = dfs_with_visualization(nodes, edges, origin, destinations)
+    elif method == 'ucs':
+        path, cost = ucs(edges, origin, destinations)
+    elif method == 'ucs_v':
+        path, cost = ucs_with_visualization(nodes, edges, origin, destinations)
     elif method == 'a*':
         path, cost = a_star(nodes, edges, origin, destinations)
     elif method == 'a*_v':
@@ -476,10 +521,6 @@ def main():
         path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
     elif method == 'gbfs_v':
         path, cost = greedy_best_first_search_with_visualization(nodes, edges, origin, destinations)
-    elif method == 'bidirectional_a*':
-        path, cost = bidirectional_a_star(nodes, edges, origin, destinations)
-    elif method == 'bidirectional_a*_v':
-        path, cost = bidirectional_a_star_with_visualization(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method: {method}")
         return
