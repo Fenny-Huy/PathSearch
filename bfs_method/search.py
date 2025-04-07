@@ -26,33 +26,27 @@ def read_graph_from_file(filename):
 
     return nodes, edges, origin, destinations
 
-def bfs(graph, origin, destinations):
-    queue = deque()
+def bfs(edges, origin, destinations):
+    from collections import deque
+
+    queue = deque([(origin, [origin], 0)])  # (current_node, path, total_cost)
     visited = set()
-    parent = {}
-    queue.append(origin)
     visited.add(origin)
-    num_nodes = 1
+    num_nodes_explored = 1
 
     while queue:
-        current = queue.popleft()
-        if current in destinations:
-            # Reconstruct path
-            path = []
-            while current is not None:
-                path.append(current)
-                current = parent.get(current)
-            path.reverse()
-            return path[-1], num_nodes, path
-        
-        for neighbor, _ in sorted(graph.get(current, []), key=lambda x: x[0]):
+        node, path, cost = queue.popleft()
+
+        if node in destinations:
+            return path, cost
+
+        for neighbor, edge_cost in sorted(edges.get(node, []), key=lambda x: x[0]):
             if neighbor not in visited:
                 visited.add(neighbor)
-                parent[neighbor] = current
-                queue.append(neighbor)
-                num_nodes += 1
+                queue.append((neighbor, path + [neighbor], cost + edge_cost))
+                num_nodes_explored += 1
 
-    return None, num_nodes, []
+    return None, None
 
 def main():
     if len(sys.argv) != 3:
