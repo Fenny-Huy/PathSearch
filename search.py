@@ -5,7 +5,6 @@ import math
 
 import networkx as nx
 import matplotlib.pyplot as plt
-import time
 
 # read input file
 def parse_input_file(filename):
@@ -53,61 +52,16 @@ def parse_input_file(filename):
 
 # placeholder for the methods
 
+# uninformed methods
+
 def bfs(edges, origin, destinations):
-    queue = deque([(origin, [origin], 0)])  # (current_node, path, total_cost)
-    visited = set()
-
-    while queue:
-        node, path, cost = queue.popleft()
-
-        if node in destinations:
-            return path, cost
-
-        if node not in visited:
-            visited.add(node)
-            for neighbor, edge_cost in edges.get(node, []):
-                if neighbor not in visited:
-                    queue.append((neighbor, path + [neighbor], cost + edge_cost))
-
-    return None, None
-
-
-def bfs_with_visualization(nodes, edges, origin, destinations):
-    # Create a graph using networkx
-    G = nx.Graph()
-    for node, coords in nodes.items():
-        G.add_node(node, pos=coords)
-    for node, neighbors in edges.items():
-        for neighbor, cost in neighbors:
-            G.add_edge(node, neighbor, weight=cost)
-
-    # Get positions for nodes
-    pos = nx.get_node_attributes(G, 'pos')
-
-    # Initialize visualization
-    plt.ion()  # Turn on interactive mode
-    fig, ax = plt.subplots(figsize=(8, 6))
-    nx.draw(G, pos, with_labels=True, node_color='lightblue', ax=ax)
-    plt.title("BFS Visualization")
-    plt.show()
-
-    # BFS algorithm with visualization
     queue = deque([(origin, [origin], 0)])
     visited = set()
 
     while queue:
-        # Draw the current state of the graph
-        current_nodes = [node for node, _, _ in queue]
-        nx.draw(G, pos, with_labels=True, node_color='lightblue', ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=current_nodes, node_color='yellow', ax=ax)
-        nx.draw_networkx_nodes(G, pos, nodelist=list(visited), node_color='green', ax=ax)
-        plt.pause(1)  # Pause to visualize the current state
-
         node, path, cost = queue.popleft()
+
         if node in destinations:
-            print(f"Destination {node} reached!")
-            nx.draw_networkx_nodes(G, pos, nodelist=path, node_color='red', ax=ax)
-            plt.pause(1)
             return path, cost
 
         if node not in visited:
@@ -116,10 +70,7 @@ def bfs_with_visualization(nodes, edges, origin, destinations):
                 if neighbor not in visited:
                     queue.append((neighbor, path + [neighbor], cost + edge_cost))
 
-    print("No path found.")
     return None, None
-
-
 
 def dfs(edges, origin, destinations):
     stack = [(origin, [origin], 0)]  # (current_node, path, total_cost)
@@ -139,47 +90,38 @@ def dfs(edges, origin, destinations):
 
     return None, None
 
+#informed methods
 
 def heuristic(node, goal, nodes):
     x1, y1 = nodes[node]
     x2, y2 = nodes[goal]
     return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
-
-def heuristic_a_star(node, goal, nodes):
-    x1, y1 = nodes[node]
-    x2, y2 = nodes[goal]
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
-def heuristic_gbfs(node, goal, nodes):
-    x1, y1 = nodes[node]
-    x2, y2 = nodes[goal]
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
-def heuristic_informed_custom(node, goal, nodes):
-    x1, y1 = nodes[node]
-    x2, y2 = nodes[goal]
-    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
-
 def a_star(nodes, edges, origin, destinations):
-    pq = [(0, origin, [origin], 0)]
-    visited = set()
+    pq = [(0, 0, origin, [origin])]
+    best_costs = {origin: 0}
     goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
-    
+
+    visited = set()
+
     while pq:
-        _, node, path, cost = heapq.heappop(pq)
+        f_score, cost, node, path = heapq.heappop(pq)
+
+        if node in visited:
+            continue
+        visited.add(node)
+
         if node in destinations:
             return path, cost
-        
-        if node not in visited:
-            visited.add(node)
-            for neighbor, edge_cost in edges.get(node, []):
-                new_cost = cost + edge_cost
-                f_score = new_cost + heuristic(neighbor, goal, nodes)
-                heapq.heappush(pq, (f_score, neighbor, path + [neighbor], new_cost))
-    
-    return None, None
 
+        for neighbor, edge_cost in edges.get(node, []):
+            new_cost = cost + edge_cost
+            if neighbor not in best_costs or new_cost < best_costs[neighbor]:
+                best_costs[neighbor] = new_cost
+                f_score = new_cost + heuristic(neighbor, goal, nodes)
+                heapq.heappush(pq, (f_score, new_cost, neighbor, path + [neighbor]))
+
+    return None, None
 
 def greedy_best_first_search(nodes, edges, origin, destinations):
     # Priority queue: (heuristic_cost, current_node, path)
@@ -211,7 +153,7 @@ def greedy_best_first_search(nodes, edges, origin, destinations):
     return None, None
 
 def bidirectional_a_star(nodes, edges, origin, destinations):
-    goal = min(destinations, key=lambda d: heuristic_informed_custom(origin, d, nodes))
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
     forward_pq = [(0, origin, [origin], 0)]  # (f_score, current_node, path, total_cost)
     backward_pq = [(0, goal, [goal], 0)]    # (f_score, current_node, path, total_cost)
     forward_visited = {}
@@ -226,7 +168,7 @@ def bidirectional_a_star(nodes, edges, origin, destinations):
             forward_visited[node] = (path, cost)
             for neighbor, edge_cost in edges.get(node, []):
                 new_cost = cost + edge_cost
-                f_score = new_cost + heuristic_informed_custom(neighbor, goal, nodes)
+                f_score = new_cost + heuristic(neighbor, goal, nodes)
                 heapq.heappush(forward_pq, (f_score, neighbor, path + [neighbor], new_cost))
 
         # Backward search
@@ -237,16 +179,404 @@ def bidirectional_a_star(nodes, edges, origin, destinations):
             backward_visited[node] = (path, cost)
             for neighbor, edge_cost in edges.get(node, []):
                 new_cost = cost + edge_cost
-                f_score = new_cost + heuristic_informed_custom(neighbor, origin, nodes)
+                f_score = new_cost + heuristic(neighbor, origin, nodes)
                 heapq.heappush(backward_pq, (f_score, neighbor, path + [neighbor], new_cost))
 
     return None, None
 
-
 # end of methods section
 
+# start of visualized methods section
+
+def bfs_with_visualization(nodes, edges, origin, destinations):
+    visited = set()
+    queue = deque([(origin, [origin], 0)])
+    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
+
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in edge_list:
+        G.add_edge(u, v, weight=cost)
+
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+    used_edges = []
+
+    while queue:
+        node, path, cost = queue.popleft()
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        if node in destinations:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for n, _, _ in queue], used_edges,
+                              title="BFS - Final Node Reached", ax=ax)
+            break
+
+        for neighbor, edge_cost in edges.get(node, []):
+            used_edges.append((node, neighbor))
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for n, _, _ in queue], used_edges,
+                              title=f"BFS - Evaluating edge {node} → {neighbor}", ax=ax)
+            if neighbor not in visited:
+                queue.append((neighbor, path + [neighbor], cost + edge_cost))
+
+    if node in destinations:
+        final_path = path
+        ax.clear()
+        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
+        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+        nx.draw(G, pos, with_labels=True, node_color='lightgray',
+                edge_color=edge_colors, edgecolors="black",
+                node_size=800, font_size=12, ax=ax,
+                arrows=True, connectionstyle="arc3,rad=0.1")
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                     label_pos=0.4, rotate=False,
+                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
+
+        plt.title("BFS - Final Path")
+        plt.pause(2)
+
+    plt.ioff()
+    plt.show()
+
+    return (path, cost) if node in destinations else (None, None)
+
+def dfs_with_visualization(nodes, edges, origin, destinations):
+    visited = set()
+    stack = [(origin, [origin], 0)]
+    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
+
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in edge_list:
+        G.add_edge(u, v, weight=cost)
+
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+    used_edges = []
+
+    while stack:
+        node, path, cost = stack.pop()
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        if node in destinations:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for n, _, _ in stack], used_edges,
+                              title="DFS - Final Node Reached", ax=ax)
+            break
+
+        for neighbor, edge_cost in edges.get(node, []):
+            used_edges.append((node, neighbor))
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for n, _, _ in stack], used_edges,
+                              title=f"DFS - Checking {node} → {neighbor}", ax=ax)
+            if neighbor not in visited:
+                stack.append((neighbor, path + [neighbor], cost + edge_cost))
+
+    if node in destinations:
+        final_path = path
+        ax.clear()
+        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
+        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+        nx.draw(G, pos, with_labels=True, node_color='lightgray',
+                edge_color=edge_colors, edgecolors="black",
+                node_size=800, font_size=12, ax=ax,
+                arrows=True, connectionstyle="arc3,rad=0.1")
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                     label_pos=0.4, rotate=False,
+                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
+
+        plt.title("DFS - Final Path")
+        plt.pause(2)
+
+    plt.ioff()
+    plt.show()
+    return (path, cost) if node in destinations else (None, None)
+
+def greedy_best_first_search_with_visualization(nodes, edges, origin, destinations):
+    visited = set()
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+    pq = [(heuristic(origin, goal, nodes), origin, [origin], 0)]
+    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
+
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in edge_list:
+        G.add_edge(u, v, weight=cost)
+
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+    used_edges = []
+
+    while pq:
+        _, node, path, cost = heapq.heappop(pq)
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        if node in destinations:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for _, n, _, _ in pq], used_edges,
+                              title="GBFS - Final Node Reached", ax=ax)
+            break
+
+        for neighbor, edge_cost in edges.get(node, []):
+            used_edges.append((node, neighbor))
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for _, n, _, _ in pq], used_edges,
+                              title=f"GBFS - Checking {node} → {neighbor}", ax=ax)
+            if neighbor not in visited:
+                h_cost = heuristic(neighbor, goal, nodes)
+                heapq.heappush(pq, (h_cost, neighbor, path + [neighbor], cost + edge_cost))
+
+    if node in destinations:
+        final_path = path
+        ax.clear()
+        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
+        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+        nx.draw(G, pos, with_labels=True, node_color='lightgray',
+                edge_color=edge_colors, edgecolors="black",
+                node_size=800, font_size=12, ax=ax,
+                arrows=True, connectionstyle="arc3,rad=0.1")
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                     label_pos=0.4, rotate=False,
+                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
+
+        plt.title("GBFS - Final Path")
+        plt.pause(2)
+
+    plt.ioff()
+    plt.show()
+    return (path, cost) if node in destinations else (None, None)
+
+def a_star_with_visualization(nodes, edges, origin, destinations):
+    pq = [(0, 0, origin, [origin])]
+    best_costs = {origin: 0}
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+
+    visited = set()
+    used_edges = []
+
+    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
+
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in edge_list:
+        G.add_edge(u, v, weight=cost)
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+
+    while pq:
+        f_score, cost, node, path = heapq.heappop(pq)
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        if node in destinations:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for _, _, n, _ in pq], used_edges,
+                              title="A* - Final Evaluation", ax=ax)
+            break  # the final path was found and displayed, breaking while loop to highlight it and end alg
+
+        for neighbor, edge_cost in edges.get(node, []):
+            new_cost = cost + edge_cost
+            used_edges.append((node, neighbor))
+
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              visited, [n for _, _, n, _ in pq], used_edges,
+                              title=f"A* - Evaluating edge {node} → {neighbor}", ax=ax)
+
+            if neighbor not in best_costs or new_cost < best_costs[neighbor]:
+                best_costs[neighbor] = new_cost
+                f_score = new_cost + heuristic(neighbor, goal, nodes)
+                heapq.heappush(pq, (f_score, new_cost, neighbor, path + [neighbor]))
+
+    # Final path display
+    if node in destinations:
+        final_path = path
+        ax.clear()
+        path_edges = [(final_path[i], final_path[i + 1]) for i in range(len(final_path) - 1)]
+        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+        nx.draw(G, pos, with_labels=True, node_color='lightgray',
+                edge_color=edge_colors, edgecolors="black",
+                node_size=800, font_size=12, ax=ax,
+                arrows=True, connectionstyle="arc3,rad=0.1")
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                     label_pos=0.4, rotate=False,
+                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=final_path, node_color="cyan", node_size=800, ax=ax)
+
+        plt.title("A* - Final Path")
+        plt.pause(2)
+
+    plt.ioff()
+    plt.show()
+
+    return (final_path, cost) if node in destinations else (None, None)
+
+def bidirectional_a_star_with_visualization(nodes, edges, origin, destinations):
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+    forward_pq = [(0, origin, [origin], 0)]
+    backward_pq = [(0, goal, [goal], 0)]
+    forward_visited = {}
+    backward_visited = {}
+
+    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in edge_list:
+        G.add_edge(u, v, weight=cost)
+
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+    used_edges = []
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+
+    while forward_pq and backward_pq:
+        # Forward step
+        _, f_node, f_path, f_cost = heapq.heappop(forward_pq)
+        if f_node in backward_visited:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              list(forward_visited.keys()) + list(backward_visited.keys()),
+                              [n for _, n, _, _ in forward_pq + backward_pq],
+                              used_edges, "Bidirectional A* - Meeting Point", ax=ax)
+            break
+
+        if f_node not in forward_visited:
+            forward_visited[f_node] = (f_path, f_cost)
+            for neighbor, edge_cost in edges.get(f_node, []):
+                new_cost = f_cost + edge_cost
+                f_score = new_cost + heuristic(neighbor, goal, nodes)
+                heapq.heappush(forward_pq, (f_score, neighbor, f_path + [neighbor], new_cost))
+                used_edges.append((f_node, neighbor))
+                animate_graph(G, pos, edge_labels, origin, destinations,
+                                  list(forward_visited.keys()) + list(backward_visited.keys()),
+                                  [n for _, n, _, _ in forward_pq + backward_pq],
+                                  used_edges, f"Forward: {f_node} → {neighbor}", ax=ax)
+
+        # Backward step
+        _, b_node, b_path, b_cost = heapq.heappop(backward_pq)
+        if b_node in forward_visited:
+            animate_graph(G, pos, edge_labels, origin, destinations,
+                              list(forward_visited.keys()) + list(backward_visited.keys()),
+                              [n for _, n, _, _ in forward_pq + backward_pq],
+                              used_edges, "Bidirectional A* - Meeting Point", ax=ax)
+            break
+
+        if b_node not in backward_visited:
+            backward_visited[b_node] = (b_path, b_cost)
+            for neighbor, edge_cost in edges.get(b_node, []):
+                new_cost = b_cost + edge_cost
+                f_score = new_cost + heuristic(neighbor, origin, nodes)
+                heapq.heappush(backward_pq, (f_score, neighbor, b_path + [neighbor], new_cost))
+                used_edges.append((b_node, neighbor))
+                animate_graph(G, pos, edge_labels, origin, destinations,
+                                  list(forward_visited.keys()) + list(backward_visited.keys()),
+                                  [n for _, n, _, _ in forward_pq + backward_pq],
+                                  used_edges, f"Backward: {b_node} → {neighbor}", ax=ax)
+
+        # Build final path if meeting point found
+    meeting_node = f_node if f_node in backward_visited else b_node if b_node in forward_visited else None
+    if meeting_node:
+        forward_path, forward_cost = forward_visited.get(meeting_node, ([], 0))
+        backward_path, backward_cost = backward_visited.get(meeting_node, ([], 0))
+        full_path = forward_path + backward_path[::-1][1:]
+        total_cost = forward_cost + backward_cost
+
+        # --- Final path display ---
+        ax.clear()
+        path_edges = [(full_path[i], full_path[i + 1]) for i in range(len(full_path) - 1)]
+        edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+        nx.draw(G, pos, with_labels=True, node_color='lightgray',
+                edge_color=edge_colors, edgecolors="black",
+                node_size=800, font_size=12, ax=ax,
+                arrows=True, connectionstyle="arc3,rad=0.1")
+        nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                     label_pos=0.4, rotate=False,
+                                     bbox=dict(facecolor='white', edgecolor='none', alpha=0.9), ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=list(forward_visited.keys()) + list(backward_visited.keys()), node_color="green", node_size=800, ax=ax)
+        nx.draw_networkx_nodes(G, pos, nodelist=full_path, node_color="cyan", node_size=800, ax=ax)
+
+        plt.title("Bidirectional A* - Final Path")
+        plt.pause(2)
+
+        return full_path, total_cost
+
+    plt.ioff()
+    plt.show()
+    return None, None
 
 
+# end of visualized methods section
+
+# start of visualization section
+
+def animate_graph(G, pos, edge_labels, origin, destinations,
+                      visited, frontier, active_edges, title, ax):
+    ax.clear()
+
+    # Draw base
+    nx.draw(G, pos, with_labels=True, node_color='lightgray', node_size=800,
+            edge_color='gray', font_size=12, ax=ax,
+            arrows=True, connectionstyle="arc3,rad=0.1")
+
+    # Draw active evaluated edges
+    nx.draw_networkx_edges(G, pos, edgelist=active_edges, edge_color="green", width=2.5, ax=ax,
+                           connectionstyle="arc3,rad=0.1")
+
+    # Draw edge labels
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                 label_pos=0.4, rotate=False,
+                                 bbox=dict(facecolor='white', edgecolor='none', alpha=0.8), ax=ax)
+
+    # Nodes
+    nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=frontier, node_color="yellow", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=[origin], node_color="red", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=destinations, node_color="lime", node_size=800, ax=ax)
+
+    plt.title(title)
+    plt.pause(0.5)
+
+# end of visualization section
 
 # main function
 def main():
@@ -260,16 +590,24 @@ def main():
     
     if method == 'bfs':
         path, cost = bfs(edges, origin, destinations)
-    elif method == 'dfs':
-        path, cost = dfs(edges, origin, destinations)
-    elif method == 'a*':
-        path, cost = a_star(nodes, edges, origin, destinations)
-    elif method == 'gbfs':
-        path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
     elif method == 'bfs_v':
         path, cost = bfs_with_visualization(nodes, edges, origin, destinations)
+    elif method == 'dfs':
+        path, cost = dfs(edges, origin, destinations)
+    elif method == 'dfs_v':
+        path, cost = dfs_with_visualization(nodes, edges, origin, destinations)
+    elif method == 'a*':
+        path, cost = a_star(nodes, edges, origin, destinations)
+    elif method == 'a*_v':
+        path, cost = a_star_with_visualization(nodes, edges, origin, destinations)
+    elif method == 'gbfs':
+        path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
+    elif method == 'gbfs_v':
+        path, cost = greedy_best_first_search_with_visualization(nodes, edges, origin, destinations)
     elif method == 'bidirectional_a*':
         path, cost = bidirectional_a_star(nodes, edges, origin, destinations)
+    elif method == 'bidirectional_a*_v':
+        path, cost = bidirectional_a_star_with_visualization(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method: {method}")
         return
