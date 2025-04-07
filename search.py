@@ -210,37 +210,29 @@ def greedy_best_first_search(nodes, edges, origin, destinations):
 
     return None, None
 
-def bidirectional_a_star(nodes, edges, origin, destinations):
-    goal = min(destinations, key=lambda d: heuristic_informed_custom(origin, d, nodes))
-    forward_pq = [(0, origin, [origin], 0)]  # (f_score, current_node, path, total_cost)
-    backward_pq = [(0, goal, [goal], 0)]    # (f_score, current_node, path, total_cost)
-    forward_visited = {}
-    backward_visited = {}
+def hsm_search(nodes, edges, origin, destinations):
+    open_set = []
+    h = min(heuristic(origin, goal, nodes) for goal in destinations)
+    heapq.heappush(open_set, (h, origin, 0, 0, [origin]))  # (f, node, moves, cost_so_far, path)
+    visited = set()
 
-    while forward_pq and backward_pq:
-        # Forward search
-        _, node, path, cost = heapq.heappop(forward_pq)
-        if node in backward_visited:
-            return path + backward_visited[node][::-1][1:], cost + backward_visited[node][1]
-        if node not in forward_visited:
-            forward_visited[node] = (path, cost)
-            for neighbor, edge_cost in edges.get(node, []):
-                new_cost = cost + edge_cost
-                f_score = new_cost + heuristic_informed_custom(neighbor, goal, nodes)
-                heapq.heappush(forward_pq, (f_score, neighbor, path + [neighbor], new_cost))
+    while open_set:
+        f, current, moves, cost_so_far, path = heapq.heappop(open_set)
 
-        # Backward search
-        _, node, path, cost = heapq.heappop(backward_pq)
-        if node in forward_visited:
-            return forward_visited[node][0] + path[::-1][1:], forward_visited[node][1] + cost
-        if node not in backward_visited:
-            backward_visited[node] = (path, cost)
-            for neighbor, edge_cost in edges.get(node, []):
-                new_cost = cost + edge_cost
-                f_score = new_cost + heuristic_informed_custom(neighbor, origin, nodes)
-                heapq.heappush(backward_pq, (f_score, neighbor, path + [neighbor], new_cost))
+        if current in visited:
+            continue
+        visited.add(current)
 
-    return None, None
+        if current in destinations:
+            return path, cost_so_far
+
+        for neighbor, edge_cost in edges.get(current, []):
+            if neighbor not in visited:
+                h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+                f_new = (moves + 1) + h_new
+                heapq.heappush(open_set, (f_new, neighbor, moves + 1, cost_so_far + edge_cost, path + [neighbor]))
+
+    return [], 0
 
 
 # end of methods section
@@ -268,8 +260,8 @@ def main():
         path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
     elif method == 'bfs_v':
         path, cost = bfs_with_visualization(nodes, edges, origin, destinations)
-    elif method == 'bidirectional_a*':
-        path, cost = bidirectional_a_star(nodes, edges, origin, destinations)
+    elif method == 'hsm':
+        path, cost = hsm_search(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method: {method}")
         return
