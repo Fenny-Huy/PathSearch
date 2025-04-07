@@ -608,11 +608,9 @@ def main():
         return
     
     if path:
-        print(f"{path}")
-        print(f"{filename} {method}")
-        print(f"{path[-1]} {len(path)}")
-        print(" -> ".join(path))
-        print(f"Cost: {cost}")
+        print(f"Filename: {filename} Method: {method.capitalize()}")
+        print(f"Destination: {path[-1]}, Path Length: {len(path)}")
+        print(f"Path: {' -> '.join(path)}")
     else:
         print(f"No path found using {method}")
 

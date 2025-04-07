@@ -717,13 +717,13 @@ def a_star_with_visualization(nodes, edges, origin, destinations):
 # end of refactor section
 
 methods = {
-        'bfs': (bfs, bfs_with_visualization),
-        'dfs': (dfs, dfs_with_visualization),
-        'ucs': (ucs, ucs_with_visualization),
-        'a*': (a_star, a_star_with_visualization),
-        'gbfs': (greedy_best_first_search, greedy_best_first_search_with_visualization),
-        'hsm': (hsm_search, hsm_search_with_visualization),
-    }
+    'bfs': {'func': bfs, 'visual_func': bfs_with_visualization, 'informed': False},
+    'dfs': {'func': dfs, 'visual_func': dfs_with_visualization, 'informed': False},
+    'ucs': {'func': ucs, 'visual_func': ucs_with_visualization, 'informed': False},
+    'a*': {'func': a_star, 'visual_func': a_star_with_visualization, 'informed': True},
+    'gbfs': {'func': greedy_best_first_search, 'visual_func': greedy_best_first_search_with_visualization, 'informed': True},
+    'hsm': {'func': hsm_search, 'visual_func': hsm_search_with_visualization, 'informed': True},
+}
 
 def main():
     if len(sys.argv) < 3 or len(sys.argv) > 4:
@@ -736,23 +736,31 @@ def main():
     method = sys.argv[2].lower()
     visualize = len(sys.argv) == 4 and sys.argv[3].lower() in {'true', 'yes', '1'}
 
+    # Parse the input file
     nodes, edges, origin, destinations = parse_input_file(filename)
 
+    # Validate the method
     if method not in methods:
         print(f"Unknown method: {method}")
         return
 
-    # Select the appropriate function based on the visualization flag
-    method_func = methods[method][1] if visualize else methods[method][0]
+    # Select the appropriate function
+    method_info = methods[method]
+    method_func = method_info['visual_func'] if visualize else method_info['func']
 
-    # Call the corresponding function
-    path, cost = method_func(nodes, edges, origin, destinations) if 'nodes' in method_func.__code__.co_varnames else method_func(edges, origin, destinations)
+    # Call the function with the appropriate arguments
+    if method_info['informed']:
+        path, cost = method_func(nodes, edges, origin, destinations)
+    else:
+        path, cost = method_func(edges, origin, destinations)
 
-
+    # Print the results
     if path:
-        print(f"{path}")
-        print(f"{filename} {method}")
-        print(f"{path[-1]} {len(path)}")
+        print(f"Path: {path}")
+        print(f"Filename: {filename}")
+        print(f"Method: {method}")
+        print(f"Destination: {path[-1]}")
+        print(f"Path Length: {len(path)}")
         print(" -> ".join(path))
         print(f"Cost: {cost}")
     else:
