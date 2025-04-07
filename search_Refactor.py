@@ -53,7 +53,7 @@ def parse_input_file(filename):
 # placeholder for the methods
 
 # uninformed methods
-
+"""
 def bfs(edges, origin, destinations):
     queue = deque([(origin, [origin], 0)])
     visited = set()
@@ -193,7 +193,7 @@ def hsm_search(nodes, edges, origin, destinations):
                 heapq.heappush(open_set, (f_new, neighbor, moves + 1, cost_so_far + edge_cost, path + [neighbor]))
 
     return None, None
-
+"""
 # end of methods section
 
 # start of visualized methods section
@@ -201,19 +201,9 @@ def hsm_search(nodes, edges, origin, destinations):
 def bfs_with_visualization(nodes, edges, origin, destinations):
     visited = set()
     queue = deque([(origin, [origin], 0)])
-    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
 
-    G = nx.DiGraph()
-    for node, (x, y) in nodes.items():
-        G.add_node(node, pos=(x, y))
-    for u, v, cost in edge_list:
-        G.add_edge(u, v, weight=cost)
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
 
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(9, 7))
     used_edges = []
 
     while queue:
@@ -251,19 +241,9 @@ def bfs_with_visualization(nodes, edges, origin, destinations):
 def dfs_with_visualization(nodes, edges, origin, destinations):
     visited = set()
     stack = [(origin, [origin], 0)]
-    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
 
-    G = nx.DiGraph()
-    for node, (x, y) in nodes.items():
-        G.add_node(node, pos=(x, y))
-    for u, v, cost in edge_list:
-        G.add_edge(u, v, weight=cost)
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
 
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(9, 7))
     used_edges = []
 
     while stack:
@@ -301,19 +281,9 @@ def dfs_with_visualization(nodes, edges, origin, destinations):
 def ucs_with_visualization(nodes, edges, origin, destinations):
     visited = set()
     pq = [(0, origin, [origin])]
-    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
 
-    G = nx.DiGraph()
-    for node, (x, y) in nodes.items():
-        G.add_node(node, pos=(x, y))
-    for u, v, cost in edge_list:
-        G.add_edge(u, v, weight=cost)
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
 
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(9, 7))
     used_edges = []
 
     while pq:
@@ -346,7 +316,7 @@ def ucs_with_visualization(nodes, edges, origin, destinations):
     plt.ioff()
     plt.show()
     return (final_path, final_cost) if node in destinations else (None, None)
-
+"""
 def a_star_with_visualization(nodes, edges, origin, destinations):
     pq = [(0, 0, origin, [origin])]
     best_costs = {origin: 0}
@@ -355,18 +325,7 @@ def a_star_with_visualization(nodes, edges, origin, destinations):
     visited = set()
     used_edges = []
 
-    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
-
-    G = nx.DiGraph()
-    for node, (x, y) in nodes.items():
-        G.add_node(node, pos=(x, y))
-    for u, v, cost in edge_list:
-        G.add_edge(u, v, weight=cost)
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(9, 7))
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
 
     while pq:
         f_score, cost, node, path = heapq.heappop(pq)
@@ -404,24 +363,14 @@ def a_star_with_visualization(nodes, edges, origin, destinations):
     plt.show()
     
     return (final_path, final_cost) if node in destinations else (None, None)
-
+"""
 def greedy_best_first_search_with_visualization(nodes, edges, origin, destinations):
     visited = set()
     goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
     pq = [(heuristic(origin, goal, nodes), origin, [origin], 0)]
-    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
 
-    G = nx.DiGraph()
-    for node, (x, y) in nodes.items():
-        G.add_node(node, pos=(x, y))
-    for u, v, cost in edge_list:
-        G.add_edge(u, v, weight=cost)
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
 
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(9, 7))
     used_edges = []
 
     while pq:
@@ -464,18 +413,7 @@ def hsm_search_with_visualization(nodes, edges, origin, destinations):
     visited = set()
     used_edges = []
 
-    # Setup visualization
-    edge_list = [(u, v, cost) for u in edges for v, cost in edges[u]]
-    G = nx.DiGraph()
-    for node, (x, y) in nodes.items():
-        G.add_node(node, pos=(x, y))
-    for u, v, cost in edge_list:
-        G.add_edge(u, v, weight=cost)
-    pos = nx.get_node_attributes(G, 'pos')
-    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
-
-    plt.ion()
-    fig, ax = plt.subplots(figsize=(9, 7))
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
 
     while open_set:
         f, current, moves, cost_so_far, path = heapq.heappop(open_set)
@@ -510,10 +448,24 @@ def hsm_search_with_visualization(nodes, edges, origin, destinations):
 
     return (final_path, final_cost) if current in destinations else (None, None)
 
-
 # end of visualized methods section
 
 # start of visualization section
+
+def setup_visualization(nodes, edges):
+    G = nx.DiGraph()
+    for node, (x, y) in nodes.items():
+        G.add_node(node, pos=(x, y))
+    for u, v, cost in [(u, v, cost) for u in edges for v, cost in edges[u]]:
+        G.add_edge(u, v, weight=cost)
+
+    pos = nx.get_node_attributes(G, 'pos')
+    edge_labels = {(u, v): d['weight'] for u, v, d in G.edges(data=True)}
+
+    plt.ion()
+    fig, ax = plt.subplots(figsize=(9, 7))
+
+    return G, pos, edge_labels, fig, ax
 
 def animate_graph(G, pos, edge_labels, origin, destinations,
                       visited, frontier, active_edges, title, ax):
@@ -569,44 +521,234 @@ def animate_final_path(G, pos, edge_labels, path, ax, method):
 
 # end of visualization section
 
-# main function
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: python search.py <filename> <method>")
-        return
-    
-    filename = sys.argv[1]
-    method = sys.argv[2].strip().lower()
-    nodes, edges, origin, destinations = parse_input_file(filename)
-    
-    if method == 'bfs':
-        path, cost = bfs(edges, origin, destinations)
-    elif method == 'bfs_v':
-        path, cost = bfs_with_visualization(nodes, edges, origin, destinations)
-    elif method == 'dfs':
-        path, cost = dfs(edges, origin, destinations)
-    elif method == 'dfs_v':
-        path, cost = dfs_with_visualization(nodes, edges, origin, destinations)
+# attempt at refactor for consolidation of methods and their visualizations
+def initialize_frontier(method, origin, destinations, nodes):
+    if method == 'a*':
+        goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+        frontier = [(0, 0, origin, [origin])]
+        return frontier, lambda f: heapq.heappop(f), lambda f, n, p, c: heapq.heappush(f, (c + heuristic(n, goal, nodes), c, n, p + [n]))
     elif method == 'ucs':
-        path, cost = ucs(edges, origin, destinations)
-    elif method == 'ucs_v':
-        path, cost = ucs_with_visualization(nodes, edges, origin, destinations)
-    elif method == 'a*':
-        path, cost = a_star(nodes, edges, origin, destinations)
-    elif method == 'a*_v':
-        path, cost = a_star_with_visualization(nodes, edges, origin, destinations)
-    elif method == 'gbfs':
-        path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
-    elif method == 'gbfs_v':
-        path, cost = greedy_best_first_search_with_visualization(nodes, edges, origin, destinations)
-    elif method == 'hsm':
-        path, cost = hsm_search(nodes, edges, origin, destinations)
-    elif method == 'hsm_v':
-        path, cost = hsm_search_with_visualization(nodes, edges, origin, destinations)
+        frontier = [(0, origin, [origin])]
+        return frontier, lambda f: heapq.heappop(f), lambda f, n, p, c: heapq.heappush(f, (c, n, p + [n]))
+    elif method == 'bfs':
+        frontier = deque([(0, origin, [origin])])
+        return frontier, lambda f: f.popleft(), lambda f, n, p, c: f.append((c, n, p + [n]))
+    elif method == 'dfs':
+        frontier = [(0, origin, [origin])]
+        return frontier, lambda f: f.pop(), lambda f, n, p, c: f.append((c, n, p + [n]))
     else:
+        raise ValueError(f"Unsupported method: {method}")
+
+def heuristic(node, goal, nodes):
+    x1, y1 = nodes[node]
+    x2, y2 = nodes[goal]
+    return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+def generalized_search(edges, origin, destinations, frontier, expand_node):
+    visited = set()
+    while frontier:
+        cost, node, path = expand_node(frontier)
+
+        if node in destinations:
+            return path, cost
+
+        if node not in visited:
+            visited.add(node)
+            for neighbor, edge_cost in edges.get(node, []):
+                if neighbor not in visited:
+                    frontier.append((cost + edge_cost, neighbor, path + [neighbor]))
+
+    return None, None
+
+def bfs(edges, origin, destinations):
+    frontier = deque([(0, origin, [origin])])  # Use deque for BFS, FIFO
+    return generalized_search(edges, origin, destinations, frontier, lambda f: f.popleft())
+
+def dfs(edges, origin, destinations):
+    frontier = [(0, origin, [origin])]  # Use list for DFS, LIFO
+    return generalized_search(edges, origin, destinations, frontier, lambda f: f.pop())
+
+def ucs(edges, origin, destinations):
+    frontier = [(0, origin, [origin])]  # Priority queue: (cumulative_cost, current_node, path)
+    return generalized_search(edges, origin, destinations, frontier, lambda f: heapq.heappop(f))
+
+def generalized_search_with_heuristic(edges, origin, destinations, frontier, expand_node, add_to_frontier):
+    visited = set()
+
+    while frontier:
+        g_cost, node, path = expand_node(frontier)
+
+        if node in destinations:
+            return path, g_cost
+
+        if node not in visited:
+            visited.add(node)
+            for neighbor, edge_cost in edges.get(node, []):
+                if neighbor not in visited:
+                    add_to_frontier(frontier, neighbor, path, g_cost + edge_cost)
+
+    return None, None
+
+def a_star(nodes, edges, origin, destinations):
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+    frontier = [(0, 0, origin, [origin])]  # Priority queue: (f_score, g_cost, current_node, path)
+
+    def expand_node(f):
+        f_score, g_cost, node, path = heapq.heappop(f)
+        return g_cost, node, path
+
+    def add_to_frontier(f, neighbor, path, g_cost):
+        h_cost = heuristic(neighbor, goal, nodes)
+        f_score = g_cost + h_cost
+        heapq.heappush(f, (f_score, g_cost, neighbor, path + [neighbor]))
+
+    return generalized_search_with_heuristic(edges, origin, destinations, frontier, expand_node, add_to_frontier)
+
+def greedy_best_first_search(nodes, edges, origin, destinations):
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+    frontier = [(heuristic(origin, goal, nodes), origin, [origin])]  # Priority queue: (h_cost, current_node, path)
+
+    def expand_node(f):
+        h_cost, node, path = heapq.heappop(f)
+        return 0, node, path  # g_cost is not used in GBFS
+
+    def add_to_frontier(f, neighbor, path, g_cost):
+        h_cost = heuristic(neighbor, goal, nodes)
+        heapq.heappush(f, (h_cost, neighbor, path + [neighbor]))
+
+    return generalized_search_with_heuristic(edges, origin, destinations, frontier, expand_node, add_to_frontier)
+
+def hsm_search(nodes, edges, origin, destinations):
+    goal = min(destinations, key=lambda d: heuristic(origin, d, nodes))
+    frontier = [(0, 0, origin, [origin])]  # Priority queue: (f, moves, current_node, path)
+
+    def expand_node(f):
+        f, moves, node, path = heapq.heappop(f)
+        return moves, node, path
+
+    def add_to_frontier(f, neighbor, path, moves):
+        h_cost = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+        f_new = (moves + 1) + h_cost
+        heapq.heappush(f, (f_new, moves + 1, neighbor, path + [neighbor]))
+
+    return generalized_search_with_heuristic(edges, origin, destinations, frontier, expand_node, add_to_frontier)
+
+def search_with_visualization(nodes, edges, origin, destinations, search_function, method_name):
+    G, pos, edge_labels, fig, ax = setup_visualization(nodes, edges)
+    visited = set()
+    frontier, expand_node, add_to_frontier = search_function.initialize_search(origin, destinations, nodes)
+
+    while frontier:
+        cost, node, path = expand_node(frontier)
+
+        if node in visited:
+            continue
+
+        visited.add(node)
+
+        if node in destinations:
+            visualize_final_path(G, pos, edge_labels, path, ax, method_name)
+            plt.ioff()
+            plt.show()
+            return path, cost
+
+        for neighbor, edge_cost in edges.get(node, []):
+            if neighbor not in visited:
+                add_to_frontier(frontier, neighbor, path, cost + edge_cost)
+
+        visualize_graph(G, pos, edge_labels, visited, [n for _, n, _ in frontier], [], origin, destinations, f"{method_name} - Exploring", ax)
+
+    plt.ioff()
+    plt.show()
+    return None, None
+
+def visualize_graph(G, pos, edge_labels, visited, frontier, active_edges, origin, destinations, title, ax):
+    ax.clear()
+
+    # Draw base graph
+    nx.draw(G, pos, with_labels=True, node_color='lightgray', node_size=800,
+            edge_color='gray', font_size=12, ax=ax, arrows=True, connectionstyle="arc3,rad=0.1")
+
+    # Draw actively evaluated edges
+    nx.draw_networkx_edges(G, pos, edgelist=active_edges, edge_color="green", width=2.5, ax=ax,
+                           connectionstyle="arc3,rad=0.1")
+
+    # Draw edge labels
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                 label_pos=0.4, rotate=False,
+                                 bbox=dict(facecolor='white', edgecolor='none', alpha=0.8), ax=ax)
+
+    # Highlight nodes
+    nx.draw_networkx_nodes(G, pos, nodelist=frontier, node_color="yellow", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=visited, node_color="green", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=[origin], node_color="red", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=destinations, node_color="lime", node_size=800, ax=ax)
+
+    plt.title(title)
+    plt.pause(0.5)
+
+def visualize_final_path(G, pos, edge_labels, path, ax, method):
+    ax.clear()
+
+    path_edges = [(path[i], path[i + 1]) for i in range(len(path) - 1)]
+    edge_colors = ['blue' if (u, v) in path_edges else 'gray' for u, v in G.edges()]
+
+    # Draw base graph
+    nx.draw(G, pos, with_labels=True, node_color='lightgray',
+            edge_color=edge_colors, edgecolors="black",
+            node_size=800, font_size=12, ax=ax, arrows=True, connectionstyle="arc3,rad=0.1")
+
+    # Draw edge labels
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_size=10,
+                                 label_pos=0.4, rotate=False,
+                                 bbox=dict(facecolor='white', edgecolor='none', alpha=0.8), ax=ax)
+
+    # Highlight nodes in path
+    nx.draw_networkx_nodes(G, pos, nodelist=path, node_color="cyan", node_size=800, ax=ax)
+    nx.draw_networkx_nodes(G, pos, nodelist=[path[0]], node_color="red", node_size=800, ax=ax)  # origin
+    nx.draw_networkx_nodes(G, pos, nodelist=[path[-1]], node_color="lime", node_size=800, ax=ax)  # destination
+
+    plt.title(f"{method} - Final Path")
+    plt.pause(2)
+
+def a_star_with_visualization(nodes, edges, origin, destinations):
+    return search_with_visualization(nodes, edges, origin, destinations, a_star, "A*")
+
+# end of refactor section
+
+methods = {
+        'bfs': (bfs, bfs_with_visualization),
+        'dfs': (dfs, dfs_with_visualization),
+        'ucs': (ucs, ucs_with_visualization),
+        'a*': (a_star, a_star_with_visualization),
+        'gbfs': (greedy_best_first_search, greedy_best_first_search_with_visualization),
+        'hsm': (hsm_search, hsm_search_with_visualization),
+    }
+
+def main():
+    if len(sys.argv) < 3 or len(sys.argv) > 4:
+        print("Usage: python search.py <filename> <method> [visualize (optional boolean)]")
+        print("Methods: bfs, dfs, ucs, a*, gbfs, hsm")
+        print("Example: python search.py input.txt gbfs true")
+        return
+
+    filename = sys.argv[1]
+    method = sys.argv[2].lower()
+    visualize = len(sys.argv) == 4 and sys.argv[3].lower() in {'true', 'yes', '1'}
+
+    nodes, edges, origin, destinations = parse_input_file(filename)
+
+    if method not in methods:
         print(f"Unknown method: {method}")
         return
-    
+
+    # Select the appropriate function based on the visualization flag
+    method_func = methods[method][1] if visualize else methods[method][0]
+
+    # Call the corresponding function
+    path, cost = method_func(nodes, edges, origin, destinations) if 'nodes' in method_func.__code__.co_varnames else method_func(edges, origin, destinations)
+
+
     if path:
         print(f"{path}")
         print(f"{filename} {method}")
