@@ -210,7 +210,29 @@ def greedy_best_first_search(nodes, edges, origin, destinations):
 
     return None, None
 
+def hsm_search(nodes, edges, origin, destinations):
+    open_set = []
+    h = min(heuristic(origin, goal, nodes) for goal in destinations)
+    heapq.heappush(open_set, (h, origin, 0, 0, [origin]))  # (f, node, moves, cost_so_far, path)
+    visited = set()
 
+    while open_set:
+        f, current, moves, cost_so_far, path = heapq.heappop(open_set)
+
+        if current in visited:
+            continue
+        visited.add(current)
+
+        if current in destinations:
+            return path, cost_so_far
+
+        for neighbor, edge_cost in edges.get(current, []):
+            if neighbor not in visited:
+                h_new = min(heuristic(neighbor, goal, nodes) for goal in destinations)
+                f_new = (moves + 1) + h_new
+                heapq.heappush(open_set, (f_new, neighbor, moves + 1, cost_so_far + edge_cost, path + [neighbor]))
+
+    return [], 0
 
 
 # end of methods section
@@ -238,6 +260,8 @@ def main():
         path, cost = greedy_best_first_search(nodes, edges, origin, destinations)
     elif method == 'bfs_v':
         path, cost = bfs_with_visualization(nodes, edges, origin, destinations)
+    elif method == 'hsm':
+        path, cost = hsm_search(nodes, edges, origin, destinations)
     else:
         print(f"Unknown method: {method}")
         return
