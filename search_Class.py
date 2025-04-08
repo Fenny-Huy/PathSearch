@@ -481,13 +481,10 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
 
     def expand_node(self):
         # Remove and return the node with the lowest f_score from the frontier.
-        print(f"frontier: {self.frontier}")
         f_score, moves, node, path = heapq.heappop(self.frontier)
-        print(f"Expanding node: {node}, f_score: {f_score}, moves: {moves}, path: {path}")
         return moves, node, path
     
     def add_to_frontier(self, neighbor, path, moves):
-        print(f"moves: {moves}")
         # Add a neighbor to the frontier, maintaining the priority order by f_score.
         h_cost = min(self.heuristic(neighbor, goal) for goal in self.destinations)
         f_score = (moves + 1) + h_cost
