@@ -475,7 +475,6 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
         # g_cost is the number of moves to reach the node
         # h_cost is the heuristic estimate to the goal
         # f_score = g_cost + h_cost
-        self.goal = min(self.destinations, key=lambda d: self.heuristic(self.origin, d))
         self.frontier = [(0, 0, self.origin, [self.origin])]
 
     def expand_node(self):
@@ -485,7 +484,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
     
     def add_to_frontier(self, neighbor, path, moves):
         # Add a neighbor to the frontier, maintaining the priority order by f_score.
-        h_cost = self.heuristic(neighbor, self.goal)
+        h_cost = min(self.heuristic(neighbor, goal) for goal in self.destinations)
         f_score = (moves + 1) + h_cost
         heapq.heappush(self.frontier, (f_score, moves + 1, neighbor, path + [neighbor]))
 
