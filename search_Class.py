@@ -514,6 +514,59 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
         return None, None
+    
+    def search_with_visualizer(self, visualizer):
+        self.initialize()
+        visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                             current_node=None, current_path=None, title="Initial State")                    
+        
+        while self.frontier:
+            cost, node, path = self.expand_node()
+
+            if node in self.visited:
+                continue
+
+            self.visited.add(node)
+            visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                 current_node=node, current_path=path, title=f"Expanded {node}")
+            
+            if node in self.destinations:
+                # within the destination check, i kept the basic add_state as i felt the title reprenting 
+                # the processing of the destination aided in showing the pathfinding algorithm in action,
+                # and jumping to the final state in some algorithms was a bit jarring (especially in UCS)
+                visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                     current_node=node, current_path=path, title="Destination Reached")
+                
+                # manually creating the final state with all details for accuracy of the state fields
+                final_state = {
+                    "visited": list(self.visited),
+                    "frontier": [self.extract_node(t) for t in self.frontier],
+                    "evaluated_edges": list(visualizer.evaluated_edges),
+                    "current_node": node,
+                    "current_path": path,
+                    "title": "Final Path Highlighted",
+                    "origin": self.origin,
+                    "destinations": list(self.destinations),
+                    "G": visualizer.G,
+                    "pos": visualizer.pos,
+                    "edge_labels": visualizer.edge_labels,
+                    "final": True   # mark as final for unique styling 
+                }
+                visualizer.states.append(final_state)
+                return path, cost
+            
+            for neighbor, edge_cost in self.edges.get(node, []):
+                if neighbor not in self.visited:
+                    if (node, neighbor) not in visualizer.evaluated_edges:
+                        visualizer.evaluated_edges.append((node, neighbor))
+
+                    candidate_path = path + [neighbor]
+                    visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                          current_node=node, current_path=candidate_path,
+                                          title=f"Evaluating {node} → {neighbor}")
+                    self.add_to_frontier(neighbor, path, cost)
+
+        return None, None
 
 # Main Function
 def main():
