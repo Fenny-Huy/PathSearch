@@ -3,8 +3,8 @@ import networkx as nx
 import sys
 
 def parse_input(file_path):
-    """Parses the input file to extract nodes and directed edges."""
-    nodes = {}
+    """Parses the input file to extract nodes and directed edges, removing duplicate coordinates."""
+    raw_nodes = {}
     edges = []
     origin = None
     destinations = []
@@ -27,7 +27,7 @@ def parse_input(file_path):
         elif section == "nodes":
             node_id, coords = line.split(":")
             x, y = map(int, coords.strip(" ()").split(","))
-            nodes[int(node_id)] = (x, y)
+            raw_nodes[int(node_id)] = (x, y)
         elif section == "edges":
             edge_info, weight = line.split(":")
             node1, node2 = map(int, edge_info.strip(" ()").split(","))
@@ -37,7 +37,33 @@ def parse_input(file_path):
         elif section == "destinations":
             destinations = list(map(int, line.split(";")))
 
-    return nodes, edges, origin, destinations
+    # Deduplication: coordinate -> lowest node ID
+    coord_to_id = {}
+    node_map = {}
+
+    for node_id in sorted(raw_nodes.keys()):
+        coord = raw_nodes[node_id]
+        if coord not in coord_to_id:
+            coord_to_id[coord] = node_id
+        node_map[node_id] = coord_to_id[coord]
+
+    # Rebuild nodes with only unique coordinate nodes
+    nodes = {node_id: coord for coord, node_id in coord_to_id.items()}
+
+    # Update edges with mapped node IDs
+    updated_edges = []
+    for n1, n2, weight in edges:
+        new_n1 = node_map[n1]
+        new_n2 = node_map[n2]
+        if (new_n1, new_n2, weight) not in updated_edges:
+            updated_edges.append((new_n1, new_n2, weight))
+
+    # Update origin and destinations
+    origin = node_map[origin]
+    destinations = sorted(set(node_map[d] for d in destinations))
+
+    return nodes, updated_edges, origin, destinations
+
 
 def plot_graph(file_path):
     """Plots the directed graph based on the input file."""

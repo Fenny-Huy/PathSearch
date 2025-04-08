@@ -3,7 +3,7 @@ import heapq
 import math
 
 def parse_input_file(filename):
-    nodes = {}
+    raw_nodes = {}
     edges = {}
     origin = None
     destinations = set()
@@ -31,7 +31,7 @@ def parse_input_file(filename):
             if section == "nodes":
                 node_id, coords = line.split(":")
                 x, y = map(float, coords.strip("() ").split(","))
-                nodes[node_id.strip()] = (x, y)
+                raw_nodes[node_id.strip()] = (x, y)
             elif section == "edges":
                 edge, cost = line.split(":")
                 node1, node2 = edge.strip("() ").split(",")
@@ -42,8 +42,37 @@ def parse_input_file(filename):
                 origin = line.strip()
             elif section == "destinations":
                 destinations = set(line.replace(";", "").split())
-    
-    return nodes, edges, origin, destinations
+
+    # Deduplicate nodes: keep the one with lowest ID for each coordinate
+    coord_to_node = {}
+    node_map = {}  # maps old_node_id -> new_node_id
+
+    for node_id in sorted(raw_nodes.keys(), key=int):
+        coord = raw_nodes[node_id]
+        if coord not in coord_to_node:
+            coord_to_node[coord] = node_id
+            node_map[node_id] = node_id
+        else:
+            node_map[node_id] = coord_to_node[coord]
+
+    # Build final cleaned nodes dict
+    nodes = {new_id: coord for coord, new_id in coord_to_node.items()}
+
+    # Update edges to use canonical node IDs
+    new_edges = {}
+    for src, neighbors in edges.items():
+        src_new = node_map[src]
+        if src_new not in new_edges:
+            new_edges[src_new] = []
+        for dest, cost in neighbors:
+            dest_new = node_map[dest]
+            new_edges[src_new].append((dest_new, cost))
+
+    # Update origin and destinations
+    origin = node_map[origin]
+    destinations = {node_map[d] for d in destinations}
+
+    return nodes, new_edges, origin, destinations
 
 def heuristic(node1, node2, nodes):
     x1, y1 = nodes[node1]
