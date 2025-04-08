@@ -12,8 +12,8 @@ from matplotlib.widgets import Button
 
 # File Parsing and Graph Building
 def parse_input_file(filename):
-    nodes = {}
-    edges = {}
+    raw_nodes = {}
+    raw_edges = {}
     origin = None
     destinations = set()
     section = None
@@ -42,23 +42,59 @@ def parse_input_file(filename):
                     node_id = parts[0].strip()
                     coord_str = parts[1].strip().strip("() ")
                     x_str, y_str = coord_str.split(',')
-                    nodes[node_id] = (float(x_str), float(y_str))
+                    raw_nodes[node_id] = (float(x_str), float(y_str))
             elif section == "edges":
                 if ':' in line:
                     parts = line.split(':', 1)
                     edge_str = parts[0].strip().strip("() ")
                     cost_str = parts[1].strip()
                     u_str, v_str = edge_str.split(',')
-                    if u_str not in edges:
-                        edges[u_str] = []
-                    edges[u_str].append((v_str, float(cost_str)))
+                    if u_str not in raw_edges:
+                        raw_edges[u_str] = []
+                    raw_edges[u_str].append((v_str, float(cost_str)))
             elif section == "origin":
                 origin = line.strip()
             elif section == "destinations":
                 dests = line.replace(';', ' ').split()
                 for d in dests:
                     destinations.add(d.strip())
+
+    # Deduplicate nodes based on coordinates
+    coord_to_node = {}
+    node_map = {}
+
+    for node_id in sorted(raw_nodes.keys(), key=int):
+        coord = raw_nodes[node_id]
+        if coord not in coord_to_node:
+            coord_to_node[coord] = node_id
+        node_map[node_id] = coord_to_node[coord]
+
+    # Final unique node dictionary
+    nodes = {node_id: coord for coord, node_id in coord_to_node.items()}
+
+    # Update and deduplicate edges: use only lowest cost per (u,v)
+    edge_map = {}
+    for u in raw_edges:
+        for v, cost in raw_edges[u]:
+            new_u = node_map[u]
+            new_v = node_map[v]
+            key = (new_u, new_v)
+            if key not in edge_map or cost < edge_map[key]:
+                edge_map[key] = cost
+
+    # Convert to adjacency list format
+    edges = {}
+    for (u, v), cost in edge_map.items():
+        if u not in edges:
+            edges[u] = []
+        edges[u].append((v, cost))
+
+    # Update origin and destinations
+    origin = node_map[origin]
+    destinations = {node_map[d] for d in destinations}
+
     return nodes, edges, origin, list(destinations)
+
 
 def build_graph(nodes, edges):
     G = nx.DiGraph()
