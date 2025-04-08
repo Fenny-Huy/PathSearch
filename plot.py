@@ -3,7 +3,7 @@ import networkx as nx
 import sys
 
 def parse_input(file_path):
-    """Parses the input file to extract nodes and directed edges, removing duplicate coordinates."""
+    """Parses the input file to extract nodes and directed edges, removing duplicate coordinates and keeping only lowest-cost edges."""
     raw_nodes = {}
     edges = []
     origin = None
@@ -37,7 +37,7 @@ def parse_input(file_path):
         elif section == "destinations":
             destinations = list(map(int, line.split(";")))
 
-    # Deduplication: coordinate -> lowest node ID
+    # Deduplicate nodes: map coordinates to lowest node ID
     coord_to_id = {}
     node_map = {}
 
@@ -47,22 +47,26 @@ def parse_input(file_path):
             coord_to_id[coord] = node_id
         node_map[node_id] = coord_to_id[coord]
 
-    # Rebuild nodes with only unique coordinate nodes
+    # Final unique nodes dict
     nodes = {node_id: coord for coord, node_id in coord_to_id.items()}
 
-    # Update edges with mapped node IDs
-    updated_edges = []
+    # Deduplicate edges by keeping only the lowest-cost one for each (src, dest)
+    edge_map = {}
     for n1, n2, weight in edges:
         new_n1 = node_map[n1]
         new_n2 = node_map[n2]
-        if (new_n1, new_n2, weight) not in updated_edges:
-            updated_edges.append((new_n1, new_n2, weight))
+        key = (new_n1, new_n2)
+        if key not in edge_map or weight < edge_map[key]:
+            edge_map[key] = weight
+
+    updated_edges = [(src, dest, weight) for (src, dest), weight in edge_map.items()]
 
     # Update origin and destinations
     origin = node_map[origin]
     destinations = sorted(set(node_map[d] for d in destinations))
 
     return nodes, updated_edges, origin, destinations
+
 
 
 def plot_graph(file_path):
