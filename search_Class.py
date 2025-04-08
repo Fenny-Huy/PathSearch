@@ -475,18 +475,45 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
         # g_cost is the number of moves to reach the node
         # h_cost is the heuristic estimate to the goal
         # f_score = g_cost + h_cost
-        self.frontier = [(0, 0, self.origin, [self.origin])]
+        initial_h_cost = min(self.heuristic(self.origin, goal) for goal in self.destinations)
+        self.frontier = []
+        heapq.heappush(self.frontier, (initial_h_cost, 0, self.origin, [self.origin]))
 
     def expand_node(self):
         # Remove and return the node with the lowest f_score from the frontier.
+        print(f"frontier: {self.frontier}")
         f_score, moves, node, path = heapq.heappop(self.frontier)
+        print(f"Expanding node: {node}, f_score: {f_score}, moves: {moves}, path: {path}")
         return moves, node, path
     
     def add_to_frontier(self, neighbor, path, moves):
+        print(f"moves: {moves}")
         # Add a neighbor to the frontier, maintaining the priority order by f_score.
         h_cost = min(self.heuristic(neighbor, goal) for goal in self.destinations)
         f_score = (moves + 1) + h_cost
         heapq.heappush(self.frontier, (f_score, moves + 1, neighbor, path + [neighbor]))
+
+    def search(self):
+        self.initialize()
+
+        while self.frontier:
+            cost, node, path = self.expand_node()
+
+            if node in self.visited:
+                continue
+
+            self.visited.add(node)
+            
+            if node in self.destinations:
+                return path, cost
+            
+            for neighbor, edge_cost in self.edges.get(node, []):
+                if neighbor not in self.visited:
+                    self.add_to_frontier(neighbor, path, cost)
+
+        # if no path to destination, return nothing
+        # feels almost like a null return from kotlin :D
+        return None, None
 
 # Main Function
 def main():
