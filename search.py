@@ -88,8 +88,12 @@ def parse_input_file(filename):
 # placeholder for the methods
 
 def bfs(edges, origin, destinations):
+    from collections import deque
+
     queue = deque([(origin, [origin], 0)])  # (current_node, path, total_cost)
     visited = set()
+    visited.add(origin)
+    num_nodes_explored = 1
 
     while queue:
         node, path, cost = queue.popleft()
@@ -97,13 +101,14 @@ def bfs(edges, origin, destinations):
         if node in destinations:
             return path, cost
 
-        if node not in visited:
-            visited.add(node)
-            for neighbor, edge_cost in edges.get(node, []):
-                if neighbor not in visited:
-                    queue.append((neighbor, path + [neighbor], cost + edge_cost))
+        for neighbor, edge_cost in sorted(edges.get(node, []), key=lambda x: x[0]):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                queue.append((neighbor, path + [neighbor], cost + edge_cost))
+                num_nodes_explored += 1
 
     return None, None
+
 
 
 def bfs_with_visualization(nodes, edges, origin, destinations):
