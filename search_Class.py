@@ -307,6 +307,7 @@ class SearchAlgorithm:
                 self.add_to_frontier(neighbor, path, cost + edge_cost)
 
     def search_with_visualizer(self, visualizer):
+        # saving visualiser as attribute to allow for overriding called methods 
         self.visualizer = visualizer
         self.initialize()
         visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
@@ -521,8 +522,9 @@ def main():
 
     if path:
         print(f"Filename: {filename} Method: {method.upper()}")
-        print(f"Destination: {path[-1]}, Path Length: {len(path)}")
-        print(" -> ".join(path))
+        # print(f"Destination: {path[-1]}, Path Length: {len(path)}")
+        print(f"Destination: {path[-1]}, Nodes Visited: {len(algorithm.visited)}")
+        print(f"Final Path Selected: {" -> ".join(path)}")
 
         # delayed start of visualizer to allow for output to be compared with gui
         # comes with the benefit of confirming that the pathfinding method worked, again
