@@ -294,7 +294,20 @@ class SearchAlgorithm:
         # feels almost like a null return from kotlin :D
         return None, None
 
+    def process_neighbors_with_visualizer(self, node, path, cost):
+        for neighbor, edge_cost in self.edges.get(node, []):
+            if neighbor not in self.visited:
+                if (node, neighbor) not in self.visualizer.evaluated_edges:
+                    self.visualizer.evaluated_edges.append((node, neighbor))
+
+                candidate_path = path + [neighbor]
+                self.visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                        current_node=node, current_path=candidate_path,
+                                        title=f"Evaluating {node} → {neighbor}")
+                self.add_to_frontier(neighbor, path, cost + edge_cost)
+
     def search_with_visualizer(self, visualizer):
+        self.visualizer = visualizer
         self.initialize()
         visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                              current_node=None, current_path=None, title="Initial State")                    
@@ -334,16 +347,8 @@ class SearchAlgorithm:
                 visualizer.states.append(final_state)
                 return path, cost
             
-            for neighbor, edge_cost in self.edges.get(node, []):
-                if neighbor not in self.visited:
-                    if (node, neighbor) not in visualizer.evaluated_edges:
-                        visualizer.evaluated_edges.append((node, neighbor))
+            self.process_neighbors_with_visualizer(node, path, cost)
 
-                    candidate_path = path + [neighbor]
-                    visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
-                                          current_node=node, current_path=candidate_path,
-                                          title=f"Evaluating {node} → {neighbor}")
-                    self.add_to_frontier(neighbor, path, cost + edge_cost)
 
         return None, None
 
@@ -463,6 +468,18 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
         # override base method to use move count instead of edge cost
         for neighbor, _ in self.edges.get(node, []):
             if neighbor not in self.visited:
+                self.add_to_frontier(neighbor, path, moves + 1)
+
+    def process_neighbors_with_visualizer(self, node, path, moves):
+        for neighbor, _ in self.edges.get(node, []):
+            if neighbor not in self.visited:
+                if (node, neighbor) not in self.visualizer.evaluated_edges:
+                    self.visualizer.evaluated_edges.append((node, neighbor))
+
+                candidate_path = path + [neighbor]
+                self.visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                        current_node=node, current_path=candidate_path,
+                                        title=f"Evaluating {node} → {neighbor}")
                 self.add_to_frontier(neighbor, path, moves + 1)
 
 # Main Function
