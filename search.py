@@ -85,11 +85,9 @@ def parse_input_file(filename):
     return nodes, new_edges, origin, destinations
 
 
-# placeholder for the methods
+# bfs method implementation
 
 def bfs(edges, origin, destinations):
-    from collections import deque
-
     queue = deque([(origin, [origin], 0)])  # (current_node, path, total_cost)
     visited = set()
     visited.add(origin)
@@ -108,7 +106,6 @@ def bfs(edges, origin, destinations):
                 num_nodes_explored += 1
 
     return None, None
-
 
 
 def bfs_with_visualization(nodes, edges, origin, destinations):
