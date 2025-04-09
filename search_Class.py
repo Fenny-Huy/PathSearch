@@ -262,6 +262,14 @@ class SearchAlgorithm:
     def extract_node(self, t):
         # For BFS/DFS/UCS the tuple is (cost, node, path), else (f_score, g_cost, node, path).
         return t[2] if len(t) == 4 else t[1]
+    
+    # this has been seperated from the inherited search method as the HSM method does not take
+    # the edge costs into consideration for the pathfinding, and instead uses the move count, 
+    # so we can override this method in the HSM class to avoid incorrectly searching the graph
+    def process_neighbors(self, node, path, cost):
+        for neighbor, edge_cost in self.edges.get(node, []):
+            if neighbor not in self.visited:
+                self.add_to_frontier(neighbor, path, cost + edge_cost)
 
     # through the magic of OOP, this method is used in the search methods to initialize the search
     # and then run the search until a destination is found or the frontier is empty
@@ -280,9 +288,7 @@ class SearchAlgorithm:
             if node in self.destinations:
                 return path, cost
             
-            for neighbor, edge_cost in self.edges.get(node, []):
-                if neighbor not in self.visited:
-                    self.add_to_frontier(neighbor, path, cost + edge_cost)
+            self.process_neighbors(node, path, cost)
 
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
@@ -452,6 +458,12 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
         h_cost = self.heuristic(neighbor, self.goal)
         f_score = (moves + 1) + h_cost
         heapq.heappush(self.frontier, (f_score, moves + 1, neighbor, path + [neighbor]))
+
+    def process_neighbors(self, node, path, moves):
+        # override base method to use move count instead of edge cost
+        for neighbor, _ in self.edges.get(node, []):
+            if neighbor not in self.visited:
+                self.add_to_frontier(neighbor, path, moves + 1)
 
 # Main Function
 def main():
