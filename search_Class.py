@@ -488,8 +488,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
     def initialize(self):
         # init frontier as priority queue [h_cost, node, path]
         # h_cost is the heuristic estimate to the goal
-        self.goal = min(self.destinations, key=lambda d: self.heuristic(self.origin, d))
-        self.frontier = [(self.heuristic(self.origin, self.goal), self.origin, [self.origin])]
+        self.frontier = [(min(self.heuristic(self.origin, goal) for goal in self.destinations), self.origin, [self.origin])]
 
     def expand_node(self):
         # Remove and return the node with the lowest h_cost from the frontier.
@@ -498,8 +497,84 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
     
     def add_to_frontier(self, neighbor, path, cost):
         # Add a neighbor to the frontier, maintaining the priority order by h_cost.
-        h_cost = self.heuristic(neighbor, self.goal)
+        h_cost = min(self.heuristic(neighbor, goal) for goal in self.destinations)
         heapq.heappush(self.frontier, (h_cost, neighbor, path + [neighbor]))
+    
+    def search(self):
+        self.initialize()
+
+        while self.frontier:
+            cost, node, path = self.expand_node()
+
+            if node in self.visited:
+                continue
+
+            self.visited.add(node)
+            
+            if node in self.destinations:
+                return path, cost
+            
+            for neighbor, edge_cost in self.edges.get(node, []):
+                if neighbor not in self.visited:
+                    self.add_to_frontier(neighbor, path, cost)
+
+        # if no path to destination, return nothing
+        # feels almost like a null return from kotlin :D
+        return None, None
+
+    
+    def search_with_visualizer(self, visualizer):
+        self.initialize()
+        visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                             current_node=None, current_path=None, title="Initial State")                    
+        
+        while self.frontier:
+            cost, node, path = self.expand_node()
+
+            if node in self.visited:
+                continue
+
+            self.visited.add(node)
+            visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                 current_node=node, current_path=path, title=f"Expanded {node}")
+            
+            if node in self.destinations:
+                # within the destination check, i kept the basic add_state as i felt the title reprenting 
+                # the processing of the destination aided in showing the pathfinding algorithm in action,
+                # and jumping to the final state in some algorithms was a bit jarring (especially in UCS)
+                visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                     current_node=node, current_path=path, title="Destination Reached")
+                
+                # manually creating the final state with all details for accuracy of the state fields
+                final_state = {
+                    "visited": list(self.visited),
+                    "frontier": [self.extract_node(t) for t in self.frontier],
+                    "evaluated_edges": list(visualizer.evaluated_edges),
+                    "current_node": node,
+                    "current_path": path,
+                    "title": "Final Path Highlighted",
+                    "origin": self.origin,
+                    "destinations": list(self.destinations),
+                    "G": visualizer.G,
+                    "pos": visualizer.pos,
+                    "edge_labels": visualizer.edge_labels,
+                    "final": True   # mark as final for unique styling 
+                }
+                visualizer.states.append(final_state)
+                return path, cost
+            
+            for neighbor, edge_cost in self.edges.get(node, []):
+                if neighbor not in self.visited:
+                    if (node, neighbor) not in visualizer.evaluated_edges:
+                        visualizer.evaluated_edges.append((node, neighbor))
+
+                    candidate_path = path + [neighbor]
+                    visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                          current_node=node, current_path=candidate_path,
+                                          title=f"Evaluating {node} → {neighbor}")
+                    self.add_to_frontier(neighbor, path, cost + edge_cost)
+
+        return None, None
 
 class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal and cost to current node (by move count)
 
