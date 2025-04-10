@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.widgets import Button
 
-# File Parsing and Graph Building
+import re
+
 def parse_input_file(filename):
     raw_nodes = {}
     raw_edges = {}
@@ -49,30 +50,60 @@ def parse_input_file(filename):
                     edge_str = parts[0].strip().strip("() ")
                     cost_str = parts[1].strip()
                     u_str, v_str = edge_str.split(',')
+                    # Validate that u_str and v_str exist in raw nodes.
+                    # We postpone this check until after all lines are read.
                     if u_str not in raw_edges:
                         raw_edges[u_str] = []
                     raw_edges[u_str].append((v_str, float(cost_str)))
             elif section == "origin":
                 origin = line.strip()
             elif section == "destinations":
-                dests = line.replace(';', ' ').split()
+                # Use regex to split on semicolon, space, or both
+                dests = re.split(r'[;\s]+', line.strip())
                 for d in dests:
-                    destinations.add(d.strip())
+                    if d:
+                        destinations.add(d.strip())
 
-    # Deduplicate nodes based on coordinates
+    # Validate required sections
+    if not raw_nodes:
+        raise ValueError("Input file is missing a valid 'Nodes' section.")
+    if not raw_edges:
+        raise ValueError("Input file is missing a valid 'Edges' section.")
+    if origin is None:
+        raise ValueError("Input file is missing an 'Origin' section.")
+    if not destinations:
+        raise ValueError("Input file is missing a 'Destinations' section.")
+
+    # Validate that every node referenced in edges exists in raw_nodes.
+    for u in raw_edges:
+        if u not in raw_nodes:
+            raise ValueError(f"Edge source node '{u}' does not exist in the Nodes section.")
+        for v, cost in raw_edges[u]:
+            if v not in raw_nodes:
+                raise ValueError(f"Edge destination node '{v}' does not exist in the Nodes section.")
+    
+    # Validate that origin exists in raw_nodes.
+    if origin not in raw_nodes:
+        raise ValueError(f"Origin node '{origin}' does not exist in the Nodes section.")
+    
+    # Validate that each destination exists in raw_nodes.
+    for d in destinations:
+        if d not in raw_nodes:
+            raise ValueError(f"Destination node '{d}' does not exist in the Nodes section.")
+
+    # Deduplicate nodes based on coordinates (keep the one with the lowest node ID, sorted numerically).
     coord_to_node = {}
     node_map = {}
-
     for node_id in sorted(raw_nodes.keys(), key=int):
         coord = raw_nodes[node_id]
         if coord not in coord_to_node:
             coord_to_node[coord] = node_id
         node_map[node_id] = coord_to_node[coord]
 
-    # Final unique node dictionary
+    # Build the final unique nodes dictionary.
     nodes = {node_id: coord for coord, node_id in coord_to_node.items()}
 
-    # Update and deduplicate edges: use only lowest cost per (u,v)
+    # Update and deduplicate edges: keep only the lowest cost edge for each (u,v) pair.
     edge_map = {}
     for u in raw_edges:
         for v, cost in raw_edges[u]:
@@ -82,18 +113,20 @@ def parse_input_file(filename):
             if key not in edge_map or cost < edge_map[key]:
                 edge_map[key] = cost
 
-    # Convert to adjacency list format
+    # Convert edge_map to an adjacency list format.
     edges = {}
     for (u, v), cost in edge_map.items():
         if u not in edges:
             edges[u] = []
         edges[u].append((v, cost))
 
-    # Update origin and destinations
+    # Update origin and destinations using the node mapping.
     origin = node_map[origin]
     destinations = {node_map[d] for d in destinations}
 
     return nodes, edges, origin, list(destinations)
+
+
 
 
 def build_graph(nodes, edges):
@@ -576,9 +609,14 @@ def main():
     filename = sys.argv[1]
     method = sys.argv[2].lower()
     visualize = len(sys.argv) == 4 and sys.argv[3].lower() in {"true", "yes", "1"}
-    nodes, edges, origin, destinations = parse_input_file(filename)
 
-    # pair classes and methods
+    try:
+        nodes, edges, origin, destinations = parse_input_file(filename)
+    except Exception as e:
+        print(f"Error parsing input file: {e}")
+        return
+
+    # Pair classes and methods (assumed to be defined elsewhere).
     algorithms = {
         "bfs": BFS,
         "dfs": DFS,
@@ -596,19 +634,15 @@ def main():
     algorithm = algorithm_class(nodes, edges, origin, destinations)
 
     if visualize:
-        # create visualizer instance and pass it to the search method, then start gui
         visualizer = PathFindingVisualizer(nodes, edges, origin, destinations, method)
         path, cost = algorithm.search_with_visualizer(visualizer)
-    else: # run method without visualizations
+    else:
         path, cost = algorithm.search()
 
     if path:
         print(f"Filename: {filename} Method: {method.upper()}")
         print(f"Destination: {path[-1]}, Path Length: {len(path)}")
         print(" -> ".join(path))
-
-        # delayed start of visualizer to allow for output to be compared with gui
-        # comes with the benefit of confirming that the pathfinding method worked, again
         if visualize:
             visualizer.start()
     else:
