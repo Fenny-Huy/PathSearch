@@ -345,9 +345,10 @@ class SearchAlgorithm:
                 continue
 
             self.visited.add(node)
+            print(f"visited: {self.visited}")
             
             if node in self.destinations:
-                return path, cost
+                return path, cost, self.visited
             
             for neighbor, edge_cost in self.edges.get(node, []):
                 if neighbor not in self.visited:
@@ -369,6 +370,7 @@ class SearchAlgorithm:
                 continue
 
             self.visited.add(node)
+            print(f"visited: {self.visited}")
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
@@ -395,7 +397,7 @@ class SearchAlgorithm:
                     "final": True   # mark as final for unique styling 
                 }
                 visualizer.states.append(final_state)
-                return path, cost
+                return path, cost, self.visited
             
             for neighbor, edge_cost in self.edges.get(node, []):
                 if neighbor not in self.visited:
@@ -510,9 +512,10 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
                 continue
 
             self.visited.add(node)
+            print(f"visited: {self.visited}")
             
             if node in self.destinations:
-                return path, cost
+                return path, cost, self.visited
             
             for neighbor, edge_cost in self.edges.get(node, []):
                 if neighbor not in self.visited:
@@ -535,6 +538,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
                 continue
 
             self.visited.add(node)
+            print(f"visited: {self.visited}")
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
@@ -561,7 +565,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
                     "final": True   # mark as final for unique styling 
                 }
                 visualizer.states.append(final_state)
-                return path, cost
+                return path, cost, self.visited
             
             for neighbor, edge_cost in self.edges.get(node, []):
                 if neighbor not in self.visited:
@@ -608,9 +612,10 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                 continue
 
             self.visited.add(node)
+            print(f"visited: {self.visited}")
             
             if node in self.destinations:
-                return path, cost
+                return path, cost, self.visited
             
             for neighbor, edge_cost in self.edges.get(node, []):
                 if neighbor not in self.visited:
@@ -632,6 +637,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                 continue
 
             self.visited.add(node)
+            print(f"visited: {self.visited}")
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
@@ -658,7 +664,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                     "final": True   # mark as final for unique styling 
                 }
                 visualizer.states.append(final_state)
-                return path, cost
+                return path, cost, self.visited
             
             for neighbor, edge_cost in self.edges.get(node, []):
                 if neighbor not in self.visited:
@@ -710,13 +716,13 @@ def main():
 
     if visualize:
         visualizer = PathFindingVisualizer(nodes, edges, origin, destinations, method)
-        path, cost = algorithm.search_with_visualizer(visualizer)
+        path, cost, visited = algorithm.search_with_visualizer(visualizer)
     else:
-        path, cost = algorithm.search()
+        path, cost, visited = algorithm.search()
 
     if path:
         print(f"Filename: {filename} Method: {method.upper()}")
-        print(f"Destination: {path[-1]}, Path Length: {len(path)}")
+        print(f"Destination: {path[-1]}, Path Length: {len(visited)}")
         print(" -> ".join(path))
         if visualize:
             visualizer.start()
