@@ -356,7 +356,7 @@ class SearchAlgorithm:
 
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
-        return None, None
+        return None, None, None
 
     def search_with_visualizer(self, visualizer):
         self.initialize()
@@ -410,7 +410,7 @@ class SearchAlgorithm:
                                           title=f"Evaluating {node} → {neighbor}")
                     self.add_to_frontier(neighbor, path, cost + edge_cost)
 
-        return None, None
+        return None, None, None
 
 # child class to allow inheritance of the heuristic method where needed
 class InformedSearchAlgorithm(SearchAlgorithm):
@@ -523,7 +523,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
 
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
-        return None, None
+        return None, None, None
 
     
     def search_with_visualizer(self, visualizer):
@@ -578,7 +578,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
                                           title=f"Evaluating {node} → {neighbor}")
                     self.add_to_frontier(neighbor, path, cost + edge_cost)
 
-        return None, None
+        return None, None, None
 
 class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal and cost to current node (by move count)
 
@@ -623,7 +623,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
 
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
-        return None, None
+        return None, None, None
     
     def search_with_visualizer(self, visualizer):
         self.initialize()
@@ -677,7 +677,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                                           title=f"Evaluating {node} → {neighbor}")
                     self.add_to_frontier(neighbor, path, cost)
 
-        return None, None
+        return None, None, None
 
 # Main Function
 def main():
