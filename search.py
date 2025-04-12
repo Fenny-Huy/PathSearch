@@ -722,7 +722,7 @@ def main():
 
     if path:
         print(f"Filename: {filename} Method: {method.upper()}")
-        print(f"Destination: {path[-1]}, Path Length: {len(visited)}")
+        print(f"Destination: {path[-1]}, Number of nodes visited: {len(visited)}")
         print(" -> ".join(path))
         if visualize:
             visualizer.start()
