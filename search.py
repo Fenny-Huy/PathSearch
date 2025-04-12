@@ -345,7 +345,7 @@ class SearchAlgorithm:
                 continue
 
             self.visited.add(node)
-            print(f"visited: {self.visited}")
+            
             
             if node in self.destinations:
                 return path, cost, self.visited
@@ -370,7 +370,7 @@ class SearchAlgorithm:
                 continue
 
             self.visited.add(node)
-            print(f"visited: {self.visited}")
+            
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
@@ -512,7 +512,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
                 continue
 
             self.visited.add(node)
-            print(f"visited: {self.visited}")
+            
             
             if node in self.destinations:
                 return path, cost, self.visited
@@ -538,7 +538,7 @@ class GBFS(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal 
                 continue
 
             self.visited.add(node)
-            print(f"visited: {self.visited}")
+            
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
@@ -612,7 +612,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                 continue
 
             self.visited.add(node)
-            print(f"visited: {self.visited}")
+            
             
             if node in self.destinations:
                 return path, cost, self.visited
@@ -637,7 +637,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                 continue
 
             self.visited.add(node)
-            print(f"visited: {self.visited}")
+            
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
