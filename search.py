@@ -555,7 +555,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
         # override base method to use move count instead of edge cost
         for neighbor, _ in self.edges.get(node, []):
             if neighbor not in self.visited:
-                self.add_to_frontier(neighbor, path, moves + 1)
+                self.add_to_frontier(neighbor, path, moves)
 
     def process_neighbors_with_visualizer(self, node, path, moves):
         for neighbor, _ in self.edges.get(node, []):
@@ -567,7 +567,7 @@ class HSM(InformedSearchAlgorithm): # prioritise by heuristic estimate to goal a
                 self.visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                         current_node=node, current_path=candidate_path,
                                         title=f"Evaluating {node} → {neighbor}")
-                self.add_to_frontier(neighbor, path, moves + 1)
+                self.add_to_frontier(neighbor, path, moves)
 
 # Main Function
 def main():
