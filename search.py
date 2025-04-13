@@ -332,6 +332,14 @@ class SearchAlgorithm:
         # For BFS/DFS/UCS the tuple is (cost, node, path), else (f_score, g_cost, node, path).
         return t[2] if len(t) == 4 else t[1]
 
+     # this has been seperated from the inherited search method as the HSM method does not take
+    # the edge costs into consideration for the pathfinding, and instead uses the move count, 
+    # so we can override this method in the HSM class to avoid incorrectly searching the graph
+    def process_neighbors(self, node, path, cost):
+        for neighbor, edge_cost in self.edges.get(node, []):
+            if neighbor not in self.visited:
+                self.add_to_frontier(neighbor, path, cost + edge_cost)
+
     # through the magic of OOP, this method is used in the search methods to initialize the search
     # and then run the search until a destination is found or the frontier is empty
     # it was modelled to be abstract enough that scalability would be improved
@@ -346,19 +354,30 @@ class SearchAlgorithm:
 
             self.visited.add(node)
             
-            
             if node in self.destinations:
-                return path, cost, self.visited
+                return path, cost
             
-            for neighbor, edge_cost in self.edges.get(node, []):
-                if neighbor not in self.visited:
-                    self.add_to_frontier(neighbor, path, cost + edge_cost)
+            self.process_neighbors(node, path, cost)
 
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
-        return None, None, None
+        return None, None
+
+    def process_neighbors_with_visualizer(self, node, path, cost):
+        for neighbor, edge_cost in self.edges.get(node, []):
+            if neighbor not in self.visited:
+                if (node, neighbor) not in self.visualizer.evaluated_edges:
+                    self.visualizer.evaluated_edges.append((node, neighbor))
+
+                candidate_path = path + [neighbor]
+                self.visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
+                                        current_node=node, current_path=candidate_path,
+                                        title=f"Evaluating {node} → {neighbor}")
+                self.add_to_frontier(neighbor, path, cost + edge_cost)
 
     def search_with_visualizer(self, visualizer):
+        # saving visualiser as attribute to allow for overriding called methods 
+        self.visualizer = visualizer
         self.initialize()
         visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                              current_node=None, current_path=None, title="Initial State")                    
@@ -370,7 +389,6 @@ class SearchAlgorithm:
                 continue
 
             self.visited.add(node)
-            
             visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
                                  current_node=node, current_path=path, title=f"Expanded {node}")
             
@@ -397,20 +415,12 @@ class SearchAlgorithm:
                     "final": True   # mark as final for unique styling 
                 }
                 visualizer.states.append(final_state)
-                return path, cost, self.visited
+                return path, cost
             
-            for neighbor, edge_cost in self.edges.get(node, []):
-                if neighbor not in self.visited:
-                    if (node, neighbor) not in visualizer.evaluated_edges:
-                        visualizer.evaluated_edges.append((node, neighbor))
+            self.process_neighbors_with_visualizer(node, path, cost)
 
-                    candidate_path = path + [neighbor]
-                    visualizer.add_state(self.visited, [self.extract_node(t) for t in self.frontier],
-                                          current_node=node, current_path=candidate_path,
-                                          title=f"Evaluating {node} → {neighbor}")
-                    self.add_to_frontier(neighbor, path, cost + edge_cost)
 
-        return None, None, None
+        return None, None
 
 # child class to allow inheritance of the heuristic method where needed
 class InformedSearchAlgorithm(SearchAlgorithm):
