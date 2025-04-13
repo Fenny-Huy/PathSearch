@@ -355,13 +355,13 @@ class SearchAlgorithm:
             self.visited.add(node)
             
             if node in self.destinations:
-                return path, cost, self.visited
+                return path, cost
             
             self.process_neighbors(node, path, cost)
 
         # if no path to destination, return nothing
         # feels almost like a null return from kotlin :D
-        return None, None, None
+        return None, None
 
     def process_neighbors_with_visualizer(self, node, path, cost):
         for neighbor, edge_cost in self.edges.get(node, []):
@@ -415,12 +415,12 @@ class SearchAlgorithm:
                     "final": True   # mark as final for unique styling 
                 }
                 visualizer.states.append(final_state)
-                return path, cost, self.visited
+                return path, cost
             
             self.process_neighbors_with_visualizer(node, path, cost)
 
 
-        return None, None, None
+        return None, None
 
 # child class to allow inheritance of the heuristic method where needed
 class InformedSearchAlgorithm(SearchAlgorithm):
